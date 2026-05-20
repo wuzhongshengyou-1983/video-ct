@@ -2,7 +2,8 @@
   <div class="page">
     <van-nav-bar title="品牌分享官" left-arrow @click-left="router.back()" :border="false" />
 
-    <van-loading v-if="loading" size="24" vertical class="loading-center">加载中…</van-loading>
+    <!-- 骨架屏加载 -->
+    <SkeletonCard v-if="loading" :lines="4" />
 
     <!-- 网络异常 -->
     <div v-if="!loading && networkError" class="error-box vct-card">
@@ -10,6 +11,14 @@
       <van-button type="primary" block @click="fetchData">重试</van-button>
     </div>
 
+    <!-- 下拉刷新包裹内容 -->
+    <van-pull-refresh
+      v-if="!loading && !networkError && data"
+      v-model="refreshing"
+      @refresh="onRefresh"
+      success-text="刷新成功"
+      :head-height="80"
+    >
     <template v-if="!loading && !networkError && data">
       <!-- 等级卡片 -->
       <section class="vct-card glow level-card">
@@ -42,7 +51,7 @@
           <div class="link-text">{{ linkUrl }}</div>
           <van-button size="small" type="primary" @click="copyLink">复制</van-button>
         </div>
-        <div class="link-tip">每邀请 1 位好友付费，你可得 18 元奖励</div>
+        <div class="link-tip">每邀请 1 位好友付费，你可得 {{ REFERRER_REWARD_CNY }} 元奖励</div>
       </section>
 
       <!-- 提现 -->
@@ -70,22 +79,31 @@
         </div>
       </section>
 
-      <!-- 推荐记录 -->
+      <!-- 推荐记录（无限滚动） -->
       <section class="vct-card">
-        <div class="vct-section-title">📋 推荐记录（{{ records.length }}）</div>
-        <div v-if="records.length === 0" class="no-data">暂无推荐记录</div>
-        <div v-for="r in records" :key="r.id" class="record-item">
-          <div class="record-left">
-            <div class="record-name">{{ r.referee_name || r.invitee_nickname || '匿名用户' }}</div>
-            <div class="record-meta">
-              <span>{{ formatTime(r.created_at) }}</span>
-              <span>· {{ r.status_label || r.status }}</span>
+        <div class="vct-section-title">📋 推荐记录（{{ allRecords.length }}）</div>
+        <div v-if="allRecords.length === 0" class="no-data">暂无推荐记录</div>
+        <van-list
+          v-else
+          v-model:loading="recordsLoading"
+          :finished="recordsFinished"
+          finished-text="没有更多了"
+          @load="onLoadRecords"
+        >
+          <div v-for="r in records" :key="r.id" class="record-item">
+            <div class="record-left">
+              <div class="record-name">{{ r.referee_name || r.invitee_nickname || '匿名用户' }}</div>
+              <div class="record-meta">
+                <span>{{ formatTime(r.created_at) }}</span>
+                <span>· {{ r.status_label || r.status }}</span>
+              </div>
             </div>
+            <div class="record-reward" v-if="r.reward_cny || r.reward_amount_cny">+{{ r.reward_cny || r.reward_amount_cny }}元</div>
           </div>
-          <div class="record-reward" v-if="r.reward_cny || r.reward_amount_cny">+{{ r.reward_cny || r.reward_amount_cny }}元</div>
-        </div>
+        </van-list>
       </section>
     </template>
+    </van-pull-refresh>
 
     <!-- 服务端错误 -->
     <div v-if="!loading && serverError" class="error-box vct-card">
@@ -104,20 +122,33 @@ import {
   formatTime,
   getLevelLabel,
   REFERRER_THRESHOLDS,
+  REFERRER_REWARD_CNY,
   MIN_WITHDRAW_CNY,
 } from '@video-ct/shared'
+import { trackPageView, trackClick } from '@/utils/tracker'
+import SkeletonCard from '@/components/SkeletonCard.vue'
+import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
 const router = useRouter()
+const { updateShare } = useWechatShare()
 
 const loading = ref(true)
 const networkError = ref(false)
 const serverError = ref('')
+const refreshing = ref(false)
 const data = ref<any | null>(null)
+const allRecords = ref<any[]>([])
 const records = ref<any[]>([])
 const linkUrl = ref('')
 const withdrawAmount = ref('')
 const withdrawError = ref('')
 const withdrawing = ref(false)
+
+// 分页
+const recordsLoading = ref(false)
+const recordsFinished = ref(false)
+const recordsPage = ref(1)
+const RECORDS_PAGE_SIZE = 10
 
 const levelConfig: Record<string, { name: string; min: number }> = {
   bronze: { name: '银牌分享官', min: REFERRER_THRESHOLDS.silver },
@@ -157,8 +188,12 @@ async function fetchData() {
       referrerApi.link().catch(() => ({ url: '' })),
     ])
     data.value = d
-    records.value = recs || []
+    allRecords.value = recs || []
+    records.value = []
+    recordsPage.value = 1
+    recordsFinished.value = false
     linkUrl.value = link?.url || link?.link || link?.h5_url || ''
+    onLoadRecords()
   } catch (e: any) {
     if (!navigator.onLine) {
       networkError.value = true
@@ -172,7 +207,26 @@ async function fetchData() {
   }
 }
 
+function onLoadRecords() {
+  const start = (recordsPage.value - 1) * RECORDS_PAGE_SIZE
+  const chunk = allRecords.value.slice(start, start + RECORDS_PAGE_SIZE)
+  if (chunk.length > 0) {
+    records.value.push(...chunk)
+    recordsPage.value++
+  }
+  recordsLoading.value = false
+  if (records.value.length >= allRecords.value.length) {
+    recordsFinished.value = true
+  }
+}
+
+async function onRefresh() {
+  await fetchData()
+  refreshing.value = false
+}
+
 async function copyLink() {
+  trackClick('copy_link')
   try {
     await navigator.clipboard.writeText(linkUrl.value)
     Toast.success('已复制，分享给朋友吧')
@@ -231,7 +285,11 @@ async function doWithdraw() {
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  trackPageView('referrer')
+  updateShare(SHARE_TEXT.referrer.title, SHARE_TEXT.referrer.desc)
+  fetchData()
+})
 </script>
 
 <style lang="scss" scoped>

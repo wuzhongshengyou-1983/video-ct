@@ -50,11 +50,24 @@ class Settings(BaseSettings):
     SILICONFLOW_MODEL_VISION: str = "Qwen/Qwen2-VL-72B-Instruct"
     SILICONFLOW_MODEL_LLM_FALLBACK: str = "Qwen/Qwen2.5-72B-Instruct"
 
-    # 微信（mock 占位）
+    # 微信
     WECHAT_APP_ID: str = ""
     WECHAT_APP_SECRET: str = ""
+    # 微信支付 v3
     WECHAT_PAY_MCH_ID: str = ""
-    WECHAT_PAY_API_KEY: str = ""
+    WECHAT_PAY_API_KEY: str = ""  # v2 API key（向下兼容）
+    WECHAT_PAY_API_V3_KEY: str = ""  # v3 API key（回调解密/验签）
+    WECHAT_PAY_CERT_SERIAL_NO: str = ""  # 商户证书序列号
+    WECHAT_PAY_PRIVATE_KEY_PATH: str = ""  # 商户私钥 PEM 文件路径
+    WECHAT_NOTIFY_URL: str = ""  # 支付回调地址（https://.../api/v1/webhooks/wechat/pay）
+    # 微信订阅消息模板 ID
+    WECHAT_TEMPLATE_DIAGNOSIS_DONE: str = ""  # 诊断完成通知模板
+    WECHAT_TEMPLATE_QUOTA_WARN: str = ""  # 配额不足提醒模板
+
+    @property
+    def is_pay_mock(self) -> bool:
+        """当商户号以 mock_ 开头时进入 mock 模式."""
+        return self.WECHAT_PAY_MCH_ID.startswith("mock_")
 
     # 平台 OAuth（mock 占位）
     DOUYIN_CLIENT_KEY: str = ""

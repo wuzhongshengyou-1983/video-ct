@@ -2,8 +2,8 @@
   <div class="page">
     <van-nav-bar title="升级订阅" left-arrow @click-left="router.back()" :border="false" />
 
-    <!-- 加载中 -->
-    <van-loading v-if="loading" size="24" vertical class="loading-center">加载产品中…</van-loading>
+    <!-- 加载中骨架屏 -->
+    <SkeletonList v-if="loading" :count="3" :lines="4" />
 
     <!-- 网络异常 -->
     <div v-if="!loading && networkError" class="error-box vct-card">
@@ -71,15 +71,18 @@
     <van-dialog
       v-model:show="showPay"
       title="确认支付"
-      :show-cancel-button="false"
+      :show-cancel-button="true"
+      cancel-button-text="取消"
+      confirm-button-text="去支付"
       @confirm="confirmPay"
       :confirm-loading="paying"
+      @cancel="showPay = false"
     >
       <div class="pay-info">
         <p><strong>{{ selectedProduct?.name }}</strong></p>
         <p class="pay-price">¥{{ selectedProduct?.price }}</p>
         <p v-if="orderResult?.order_no" class="pay-order">订单号：{{ orderResult.order_no }}</p>
-        <p class="pay-tip">开发环境，使用模拟支付</p>
+        <p v-if="!isWechatEnv" class="pay-tip">请在微信中打开完成支付</p>
       </div>
     </van-dialog>
   </div>
@@ -90,7 +93,11 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Toast } from 'vant'
 import { subscriptionApi } from '@/api'
+import { isWechat, wechatPay } from '@/utils/pay'
+import type { WxPayParams } from '@/utils/pay'
 import { formatTime, getTierLabel } from '@video-ct/shared'
+import { trackPageView, trackConversion } from '@/utils/tracker'
+import SkeletonList from '@/components/SkeletonList.vue'
 
 const router = useRouter()
 
@@ -105,6 +112,13 @@ const showPay = ref(false)
 const paying = ref(false)
 const selectedProduct = ref<any | null>(null)
 const orderResult = ref<any | null>(null)
+
+const isWechatEnv = !import.meta.env.DEV && isWechat()
+
+let pollTimer: ReturnType<typeof setInterval> | null = null
+let pollStart = 0
+const POLL_MAX_MS = 60_000
+const POLL_INTERVAL = 2000
 
 async function fetchData() {
   loading.value = true
@@ -138,6 +152,7 @@ async function buy(p: any) {
   buyingSku.value = p.sku
   try {
     orderResult.value = await subscriptionApi.createOrder(p.sku)
+    trackConversion('order_created', { sku: p.sku, tier: p.tier })
     showPay.value = true
   } catch (e: any) {
     if (e.status === 402) {
@@ -152,14 +167,79 @@ async function buy(p: any) {
   }
 }
 
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function startPolling(orderNo: string) {
+  if (pollTimer) return
+  pollStart = Date.now()
+  pollTimer = setInterval(async () => {
+    if (Date.now() - pollStart > POLL_MAX_MS) {
+      stopPolling()
+      Toast.fail('支付超时，请联系客服')
+      return
+    }
+    try {
+      const status = await subscriptionApi.checkPayStatus(orderNo)
+      if (status?.payment_status === 'paid') {
+        stopPolling()
+        Toast.success('支付成功！')
+        showPay.value = false
+        router.push(`/order/${orderNo}`)
+      } else if (status?.payment_status === 'cancelled') {
+        stopPolling()
+      }
+    } catch {
+      // 轮询失败不提示，等下一轮
+    }
+  }, POLL_INTERVAL)
+}
+
 async function confirmPay() {
   if (!orderResult.value?.order_no) return
+  const orderNo = orderResult.value.order_no
   paying.value = true
   try {
-    await subscriptionApi.mockPay(orderResult.value.order_no)
-    Toast.success('支付成功！')
-    showPay.value = false
-    router.push(`/order/${orderResult.value.order_no}`)
+    // 1. 获取支付参数
+    const params = await subscriptionApi.getPayParams(orderNo)
+    if (!params) {
+      Toast.fail('获取支付参数失败')
+      return
+    }
+
+    // 2. mock 模式：直接跳转
+    if (params.mock) {
+      Toast.success('[DEV] 模拟支付成功')
+      showPay.value = false
+      router.push(`/order/${orderNo}`)
+      return
+    }
+
+    // 3. 微信 JSAPI 支付
+    if (isWechatEnv && params.prepay_id) {
+      const result = await wechatPay(params as WxPayParams)
+      if (result.success) {
+        startPolling(orderNo)
+      } else if (result.message === '用户取消支付') {
+        Toast.fail('支付已取消')
+      } else {
+        Toast.fail(result.message || '支付失败')
+      }
+      return
+    }
+
+    // 4. 微信外：跳转 H5 支付
+    if (params.pay_url) {
+      window.open(params.pay_url, '_blank')
+      startPolling(orderNo)
+      return
+    }
+
+    Toast.fail('暂不支持此支付方式')
   } catch (e: any) {
     if (e.status && e.status >= 500) {
       Toast.fail('服务繁忙，请稍后重试')
@@ -191,7 +271,10 @@ async function renewSub() {
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  trackPageView('subscribe')
+  fetchData()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -10,7 +10,18 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
+import { useWechatShare } from '@/composables/useWechatShare'
+
+// 全局默认分享卡片（各页面可通过路由变更时重新 setWxShare 覆盖）
+const { updateShare } = useWechatShare()
+onMounted(() => {
+  updateShare(
+    '给你的短视频做一次 CT 扫描',
+    '6 维 18 点位，90 秒出报告，AI 驱动的短视频诊断工具',
+  )
+})
 </script>
 
 <style lang="scss" scoped>

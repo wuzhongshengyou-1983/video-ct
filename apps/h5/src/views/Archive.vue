@@ -2,7 +2,8 @@
   <div class="page">
     <van-nav-bar title="成长档案" left-arrow @click-left="router.back()" :border="false" />
 
-    <van-loading v-if="loading" size="24" vertical class="loading-center">加载档案中…</van-loading>
+    <!-- 骨架屏加载 -->
+    <SkeletonCard v-if="loading" :lines="5" />
 
     <!-- 网络异常 -->
     <div v-if="!loading && networkError" class="error-box vct-card">
@@ -10,8 +11,16 @@
       <van-button type="primary" block @click="fetchData">重试</van-button>
     </div>
 
+    <!-- 下拉刷新 -->
+    <van-pull-refresh
+      v-if="!loading && !networkError && !serverError"
+      v-model="refreshing"
+      @refresh="onRefresh"
+      success-text="刷新成功"
+      :head-height="80"
+    >
     <!-- 无档案引导 -->
-    <div v-if="!loading && !networkError && !archive && !serverError" class="empty-guide">
+    <div v-if="!archive" class="empty-guide">
       <van-empty image="search" description="还没有成长档案">
         <template #bottom>
           <p class="guide-text">先去做一次视频 CT 诊断，系统会自动为你建立成长档案</p>
@@ -102,6 +111,7 @@
         </div>
       </section>
     </template>
+    </van-pull-refresh>
 
     <!-- 服务端错误 -->
     <div v-if="!loading && serverError" class="error-box vct-card">
@@ -115,32 +125,36 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { archiveApi } from '@/api'
+import { GRADE_LABELS, ARCHIVE_METRIC_LABELS } from '@video-ct/shared'
 import dayjs from 'dayjs'
+import SkeletonCard from '@/components/SkeletonCard.vue'
 
 const router = useRouter()
 
 const loading = ref(true)
 const networkError = ref(false)
 const serverError = ref('')
+const refreshing = ref(false)
 const archive = ref<any | null>(null)
 const curveData = ref<any | null>(null)
-
-const dimNames: Record<string, string> = {
-  ct_score: 'CT分', hook: '吸引力', retention: '留存力', interaction: '互动率', conversion: '转化力', persona: '人设值',
-}
 
 const dimTrends = computed(() => {
   if (!curveData.value?.dimension_trends) return []
   return Object.entries(curveData.value.dimension_trends).map(([key, val]: any) => ({
-    name: dimNames[key] || key,
+    name: ARCHIVE_METRIC_LABELS[key] || key,
     latest: val.latest ?? 0,
     delta: val.delta ?? 0,
   }))
 })
 
+/** 使用共享 GRADE_LABELS，同时兼容 CSS class */
 function levelCls(l: string) {
-  const map: Record<string, string> = { L1: 'l1', L2: 'l2', L3: 'l3', L4: 'l4', L5: 'l5', L6: 'l6' }
-  return map[l] || 'l1'
+  const lower = (l || '').toLowerCase()
+  return lower
+}
+
+function getGradeLabel(l: string) {
+  return GRADE_LABELS[l] || l
 }
 
 function trendClass(d: number) {
@@ -176,6 +190,11 @@ async function fetchData() {
   } finally {
     loading.value = false
   }
+}
+
+async function onRefresh() {
+  await fetchData()
+  refreshing.value = false
 }
 
 onMounted(fetchData)

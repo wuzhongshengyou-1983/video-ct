@@ -18,7 +18,7 @@
 
     <!-- 主 CTA -->
     <section class="cta">
-      <div class="vct-card glow main-cta" @click="router.push('/diagnose/submit')">
+      <div class="vct-card glow main-cta" @click="goDiagnoseSubmit">
         <div class="cta-icon">⚡</div>
         <div class="cta-text">
           <div class="cta-title">给你的视频做一次 CT 扫描</div>
@@ -30,7 +30,7 @@
 
     <!-- 三大入口 -->
     <section class="grid-3">
-      <div class="grid-item" @click="router.push('/persona')">
+      <div class="grid-item" @click="goPersona">
         <div class="icon">🎭</div>
         <div class="title">人设 IPP</div>
         <div class="sub">12 原型匹配</div>
@@ -53,7 +53,9 @@
         🔥 赛道头部对标
         <van-button size="mini" plain @click="router.push('/diagnose')">查看全部</van-button>
       </div>
-      <div class="benchmark-list">
+      <!-- 骨架屏加载态 -->
+      <SkeletonCard v-if="benchmarkLoading && benchmarkTop.length === 0" :lines="2" />
+      <div v-else class="benchmark-list">
         <div v-for="b in benchmarkTop" :key="b.account_id" class="benchmark-item vct-card">
           <div class="rank">#{{ b.rank }}</div>
           <div class="info">
@@ -67,10 +69,10 @@
 
     <!-- 分享官入口 -->
     <section>
-      <div class="vct-card referrer-banner" @click="router.push('/referrer')">
+      <div class="vct-card referrer-banner" @click="goReferrer">
         <div class="banner-left">
           <div class="banner-title">成为品牌分享官</div>
-          <div class="banner-sub">拉 1 个朋友付费 = 18 元 · 拉 6 个抵 PRO 月卡</div>
+          <div class="banner-sub">拉 1 个朋友付费 = {{ REFERRER_REWARD_CNY }} 元 · 拉 {{ REFERRER_DEDUCT_COUNT }} 个抵 PRO 月卡</div>
         </div>
         <div class="banner-right">💎</div>
       </div>
@@ -94,12 +96,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { benchmarkApi } from '@/api'
-import { formatFollowerCount, getTierLabel } from '@video-ct/shared'
+import { formatFollowerCount, getTierLabel, REFERRER_REWARD_CNY, REFERRER_DEDUCT_COUNT } from '@video-ct/shared'
+import SkeletonCard from '@/components/SkeletonCard.vue'
+import { trackPageView, trackClick } from '@/utils/tracker'
+import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const benchmarkTop = ref<any[]>([])
+const benchmarkLoading = ref(true)
 const agents = ref([
   { name: 'CTRadiologist', role: 'CT 诊断官', emoji: '🩺' },
   { name: 'BenchmarkAnalyst', role: '对标分析师', emoji: '📊' },
@@ -114,10 +120,31 @@ const agents = ref([
 const usedCount = computed(() => userStore.me?.monthly_free_scans_used ?? 0)
 const quota = computed(() => userStore.me?.monthly_free_scans_quota ?? 3)
 
+function goDiagnoseSubmit() {
+  trackClick('submit_diagnosis')
+  router.push('/diagnose/submit')
+}
+
+function goPersona() {
+  trackClick('persona')
+  router.push('/persona')
+}
+
+function goReferrer() {
+  trackClick('referrer')
+  router.push('/referrer')
+}
+
+const { updateShare } = useWechatShare()
+
 onMounted(async () => {
+  trackPageView('home')
+  updateShare(SHARE_TEXT.home.title, SHARE_TEXT.home.desc)
   try {
     benchmarkTop.value = await benchmarkApi.top10('职场干货')
-  } catch { /* ignore */ }
+  } catch { /* ignore */ } finally {
+    benchmarkLoading.value = false
+  }
 })
 </script>
 

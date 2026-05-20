@@ -151,6 +151,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Toast } from 'vant'
 import { personaApi } from '@/api'
+import { PERSONA_ARCHETYPES } from '@video-ct/shared'
 
 const router = useRouter()
 
@@ -219,7 +220,7 @@ async function fetchData() {
     ])
     persona.value = p
     if (p) saveCachedPersona(p)
-    archetypes.value = a || []
+    archetypes.value = a?.length ? a : PERSONA_ARCHETYPES as any[]
   } catch (e: any) {
     if (!navigator.onLine) {
       networkError.value = true

@@ -12,34 +12,57 @@
       <van-icon name="arrow" />
     </div>
 
-    <!-- 历史诊断 -->
-    <div class="vct-section-title">📜 历史诊断（{{ list.length }}）</div>
-    <div v-if="list.length === 0 && !networkError" class="empty">
-      <van-empty description="还没有诊断记录，去发起第一次吧" />
-    </div>
-    <div v-if="networkError" class="empty">
+    <!-- 历史诊断（下拉刷新 + 无限滚动） -->
+    <div class="vct-section-title">📜 历史诊断（{{ total }}）</div>
+
+    <!-- 骨架屏首次加载态 -->
+    <SkeletonList v-if="firstLoad" :count="4" />
+
+    <!-- 网络异常 -->
+    <div v-if="!firstLoad && networkError" class="empty">
       <van-empty image="network" description="网络异常，请检查网络后重试" />
-      <van-button type="primary" block size="small" @click="fetchList">重试</van-button>
+      <van-button type="primary" block size="small" @click="onRefresh">重试</van-button>
     </div>
-    <div v-else class="diag-list">
-      <div
-        v-for="d in list"
-        :key="d.id"
-        class="vct-card diag-item"
-        @click="goReport(d)"
-      >
-        <div class="diag-head">
-          <span class="platform">{{ platformLabel(d.video_platform) }}</span>
-          <span class="status-pill" :class="d.status">{{ statusLabel(d.status) }}</span>
-        </div>
-        <div class="diag-url">{{ d.video_url }}</div>
-        <div class="diag-meta">
-          <span>{{ formatTime(d.created_at) }}</span>
-          <span>· 配额：{{ d.quota_source }}</span>
-          <span v-if="d.progress_pct < 100">· {{ d.progress_pct }}%</span>
-        </div>
+
+    <!-- 列表区域（下拉刷新包裹） -->
+    <van-pull-refresh
+      v-if="!firstLoad && !networkError"
+      v-model="refreshing"
+      @refresh="onRefresh"
+      success-text="刷新成功"
+      :head-height="80"
+    >
+      <div v-if="list.length === 0" class="empty">
+        <van-empty description="还没有诊断记录，去发起第一次吧" />
       </div>
-    </div>
+      <van-list
+        v-else
+        v-model:loading="loading"
+        :finished="finished"
+        finished-text="没有更多了"
+        @load="onLoad"
+      >
+        <div class="diag-list">
+          <div
+            v-for="d in list"
+            :key="d.id"
+            class="vct-card diag-item"
+            @click="goReport(d)"
+          >
+            <div class="diag-head">
+              <span class="platform">{{ platformLabel(d.video_platform) }}</span>
+              <span class="status-pill" :class="d.status">{{ statusLabel(d.status) }}</span>
+            </div>
+            <div class="diag-url">{{ d.video_url }}</div>
+            <div class="diag-meta">
+              <span>{{ formatTime(d.created_at) }}</span>
+              <span>· 配额：{{ d.quota_source }}</span>
+              <span v-if="d.progress_pct < 100">· {{ d.progress_pct }}%</span>
+            </div>
+          </div>
+        </div>
+      </van-list>
+    </van-pull-refresh>
   </div>
 </template>
 
@@ -48,10 +71,19 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { diagnosisApi } from '@/api'
 import { formatTime } from '@video-ct/shared'
+import SkeletonList from '@/components/SkeletonList.vue'
 
 const router = useRouter()
+const allItems = ref<any[]>([])
 const list = ref<any[]>([])
+const total = ref(0)
+const firstLoad = ref(true)
 const networkError = ref(false)
+const refreshing = ref(false)
+const loading = ref(false)
+const finished = ref(false)
+const page = ref(1)
+const PAGE_SIZE = 10
 
 const PLATFORM_LABELS: Record<string, string> = {
   douyin: '抖音', kuaishou: '快手', shipinhao: '视频号', xiaohongshu: '小红书', bilibili: 'B站', unknown: '其他',
@@ -68,18 +100,49 @@ function goReport(d: any) {
   else router.push(`/diagnose/${d.id}`)
 }
 
-async function fetchList() {
+/** 全量获取数据，由前端分页展示 */
+async function fetchAllItems() {
   networkError.value = false
   try {
     const data = await diagnosisApi.list()
-    list.value = data || []
+    allItems.value = data || []
+    total.value = allItems.value.length
   } catch (e: any) {
     if (!navigator.onLine) networkError.value = true
-    else list.value = []
+    else allItems.value = []
   }
 }
 
-onMounted(fetchList)
+/** 前端分页加载：每次追加 PAGE_SIZE 条 */
+function onLoad() {
+  const start = (page.value - 1) * PAGE_SIZE
+  const chunk = allItems.value.slice(start, start + PAGE_SIZE)
+  if (chunk.length > 0) {
+    list.value.push(...chunk)
+    page.value++
+  }
+  loading.value = false
+  if (list.value.length >= allItems.value.length) {
+    finished.value = true
+  }
+}
+
+/** 下拉刷新：重新全量获取 + 重置分页 */
+async function onRefresh() {
+  await fetchAllItems()
+  list.value = []
+  page.value = 1
+  finished.value = false
+  // 立即加载第一页
+  onLoad()
+  refreshing.value = false
+}
+
+onMounted(async () => {
+  await fetchAllItems()
+  firstLoad.value = false
+  onLoad()
+})
 </script>
 
 <style lang="scss" scoped>

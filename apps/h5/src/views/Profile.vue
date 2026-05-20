@@ -11,6 +11,27 @@
     </div>
 
     <template v-if="!loading && !networkError">
+      <!-- 头像上传 -->
+      <div class="avatar-section">
+        <div class="avatar-wrapper" @click="triggerUpload">
+          <img v-if="avatarPreview" :src="avatarPreview" alt="头像" class="avatar-img" />
+          <div v-else class="avatar-placeholder">{{ (form.nickname || '?').charAt(0).toUpperCase() }}</div>
+          <div class="avatar-edit-icon">📷</div>
+        </div>
+        <div class="avatar-tip">点击更换头像（jpeg/png/webp，≤2MB）</div>
+        <!-- 隐藏的 van-uploader -->
+        <van-uploader
+          ref="uploaderRef"
+          v-model="avatarFiles"
+          :max-count="1"
+          :before-read="beforeRead"
+          :after-read="afterRead"
+          accept="image/jpeg,image/png,image/webp"
+          style="display:none"
+        />
+        <div v-if="avatarError" class="avatar-error">{{ avatarError }}</div>
+      </div>
+
       <div class="form-section">
         <van-field
           v-model="form.nickname"
@@ -89,6 +110,14 @@ const networkError = ref(false)
 const serverError = ref('')
 const saving = ref(false)
 
+// 头像上传
+const uploaderRef = ref<any>(null)
+const avatarFiles = ref<any[]>([])
+const avatarPreview = ref<string>('')
+const avatarError = ref('')
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
 const form = reactive({
   nickname: '',
   track: '',
@@ -116,6 +145,7 @@ function loadProfile() {
       form.follower_count = me.follower_count ? String(me.follower_count) : ''
       form.bio = me.bio || ''
       form.goal = me.goal || me.goals || ''
+      avatarPreview.value = me.avatar_url || ''
     } else {
       // no user data yet, not a network error
     }
@@ -124,6 +154,67 @@ function loadProfile() {
   } finally {
     loading.value = false
   }
+}
+
+/** 触发隐藏的上传器 */
+function triggerUpload() {
+  const input = (uploaderRef.value?.$el || document.querySelector('.van-uploader__input')) as HTMLInputElement | null
+  if (input) input.click()
+}
+
+/** 上传前校验 */
+function beforeRead(file: File): boolean {
+  avatarError.value = ''
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    avatarError.value = '仅支持 jpeg/png/webp 格式'
+    Toast.fail('仅支持 jpeg/png/webp 格式')
+    return false
+  }
+  if (file.size > MAX_AVATAR_SIZE) {
+    avatarError.value = '图片大小不能超过 2MB'
+    Toast.fail('图片大小不能超过 2MB')
+    return false
+  }
+  return true
+}
+
+/** 上传后处理 */
+async function afterRead(file: { file?: File; content?: string }) {
+  const f = file.file
+  if (!f) return
+  try {
+    // 先显示 base64 预览
+    const base64 = await fileToBase64(f)
+    avatarPreview.value = base64 as string
+
+    // 尝试调用后端上传接口
+    try {
+      const uploaded = await userApi.uploadAvatar(f)
+      if (uploaded?.url) {
+        avatarPreview.value = uploaded.url
+        Toast.success('头像上传成功')
+      }
+    } catch {
+      // 后端不可用时，保存 base64 data URL
+      Toast.success('头像已更新（本地）')
+    }
+    avatarError.value = ''
+  } catch (e: any) {
+    avatarError.value = '上传失败，请重试'
+    Toast.fail(e.message || '上传失败')
+  } finally {
+    avatarFiles.value = []
+  }
+}
+
+/** File → base64 data URL */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('读取图片失败'))
+    reader.readAsDataURL(file)
+  })
 }
 
 function validate(): boolean {
@@ -160,6 +251,10 @@ async function save() {
     if (form.follower_count) payload.follower_count = Number(form.follower_count)
     if (form.bio) payload.bio = form.bio.trim()
     if (form.goal) payload.goal = form.goal.trim()
+    // 如果头像有 base64 预览且非远程 URL，一并提交
+    if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
+      payload.avatar_url = avatarPreview.value
+    }
 
     await userApi.updateProfile(payload)
     Toast.success('保存成功')
@@ -184,6 +279,31 @@ onMounted(loadProfile)
 <style lang="scss" scoped>
 .page { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); min-height: 100vh; }
 .loading-center { padding-top: 120px; display: flex; justify-content: center; }
+
+.avatar-section {
+  display: flex; flex-direction: column; align-items: center; padding: 24px 16px 8px;
+  .avatar-wrapper {
+    position: relative; width: 80px; height: 80px; border-radius: 50%;
+    cursor: pointer; overflow: hidden;
+    border: 2px solid var(--vct-border);
+    .avatar-img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .avatar-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, var(--vct-primary), var(--vct-accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 700; color: #fff;
+    }
+    .avatar-edit-icon {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.5); text-align: center;
+      font-size: 14px; line-height: 24px;
+    }
+  }
+  .avatar-tip { font-size: 11px; color: var(--vct-text-3); margin-top: 8px; }
+  .avatar-error { font-size: 11px; color: var(--vct-danger); margin-top: 4px; }
+}
 
 .form-section {
   margin: 0; scroll-margin-bottom: 40vh;

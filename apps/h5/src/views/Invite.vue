@@ -7,7 +7,7 @@
       <div v-if="refCode" class="ref-card vct-card glow">
         <div class="ref-icon">🎁</div>
         <div class="ref-text">受 <strong>{{ refCode }}</strong> 邀请</div>
-        <div class="ref-benefit">注册即享首单 9 折优惠</div>
+        <div class="ref-benefit">注册即享首单 9 折优惠 · 付费返 {{ REFERRER_REWARD_CNY }} 元 · 满 {{ REFERRER_DEDUCT_COUNT }} 人抵 PRO 月卡</div>
       </div>
 
       <div class="features">
@@ -38,12 +38,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { REFERRER_REWARD_CNY, REFERRER_DEDUCT_COUNT } from '@video-ct/shared'
+import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
 const router = useRouter()
 const route = useRoute()
 const refCode = ref<string | null>(null)
+const { updateShare } = useWechatShare()
 
 onMounted(() => {
+  updateShare(SHARE_TEXT.invite.title, SHARE_TEXT.invite.desc)
   const code = route.query.ref as string
   if (code) {
     refCode.value = code

@@ -7,6 +7,10 @@
     </van-nav-bar>
 
     <div v-if="report" class="report">
+      <!-- 离线模式标签 -->
+      <div v-if="isOffline" class="offline-bar">
+        <span class="offline-icon">📡</span> 离线模式 · 展示缓存版本
+      </div>
       <!-- 总评 -->
       <section class="vct-card glow score-card">
         <div class="grade-badge">{{ getGradeLabel(report.grade) }}</div>
@@ -112,15 +116,69 @@ import { useRouter, useRoute } from 'vue-router'
 import { Toast } from 'vant'
 import { diagnosisApi } from '@/api'
 import { getGradeLabel } from '@video-ct/shared'
+import { trackPageView, trackClick } from '@/utils/tracker'
 import RadarChart from '@/components/RadarChart.vue'
+import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
 const router = useRouter()
 const route = useRoute()
 const id = route.params.id as string
 
 const report = ref<any | null>(null)
+const { updateShare } = useWechatShare()
 const rating = ref(0)
 const feedback = ref('')
+const isOffline = ref(false)
+
+const CACHE_KEY = `vct_report_${id}`
+const RECENT_LIST_KEY = 'vct_recent_reports'
+const MAX_RECENT = 10
+
+// ---- 离线缓存辅助 ----
+function loadCachedReport(): any | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveCachedReport(r: any): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(r))
+    // 更新最近报告列表 (LRU)
+    updateRecentList(id)
+  } catch {
+    // localStorage 满，清理后重试
+    try {
+      localStorage.clear()
+      localStorage.setItem(CACHE_KEY, JSON.stringify(r))
+    } catch { /* 静默失败 */ }
+  }
+}
+
+function updateRecentList(reportId: string): void {
+  try {
+    const raw = localStorage.getItem(RECENT_LIST_KEY)
+    let list: string[] = raw ? JSON.parse(raw) : []
+    // LRU: 移除已有同 ID，推到最前
+    list = list.filter((x) => x !== reportId)
+    list.unshift(reportId)
+    if (list.length > MAX_RECENT) {
+      list = list.slice(0, MAX_RECENT)
+      // 清理被淘汰的报告缓存
+      const keep = new Set(list)
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('vct_report_') && !keep.has(key.replace('vct_report_', ''))) {
+          localStorage.removeItem(key)
+        }
+      }
+    }
+    localStorage.setItem(RECENT_LIST_KEY, JSON.stringify(list))
+  } catch { /* 静默失败 */ }
+}
 
 const dimScores = computed(() => {
   if (!report.value) return {}
@@ -141,6 +199,7 @@ function prioCls(p: string) {
 }
 
 async function submitFeedback() {
+  trackClick('feedback', { report_id: id, rating: rating.value })
   try {
     await diagnosisApi.feedback(id, rating.value, feedback.value || undefined)
     Toast.success('谢谢反馈！AI 会更聪明')
@@ -154,13 +213,43 @@ async function submitFeedback() {
 }
 
 function share() {
-  Toast('长按截图分享，或复制邀请链接到朋友圈')
+  trackClick('share_report', { report_id: id })
+  if (report.value) {
+    const { title, desc } = SHARE_TEXT.report(report.value.overall_score, report.value.grade)
+    updateShare(title, desc, `/report/${id}`)
+  }
+  Toast('已设置分享卡片，点击右上角分享给你的朋友')
 }
 
 onMounted(async () => {
+  trackPageView('report')
+
+  // 1. 先展示缓存版本（如有）
+  const cached = loadCachedReport()
+  if (cached) {
+    report.value = cached
+    isOffline.value = true
+  }
+
+  // 2. 后台拉取最新版本
   try {
-    report.value = await diagnosisApi.report(id)
+    const fresh = await diagnosisApi.report(id)
+    report.value = fresh
+    isOffline.value = false
+    saveCachedReport(fresh)
+    // 更新分享卡片
+    const { title, desc } = SHARE_TEXT.report(fresh.overall_score, fresh.grade)
+    updateShare(title, desc, `/report/${id}`)
   } catch (e: any) {
+    // 3. 网络失败但有缓存，继续显示缓存
+    if (report.value) {
+      isOffline.value = true
+      if (navigator.onLine) {
+        Toast.fail('服务繁忙，显示缓存版本')
+      }
+      return
+    }
+    // 4. 无缓存且网络失败
     if (e.status && e.status >= 500) {
       Toast.fail('服务繁忙，请稍后重试')
     } else {
@@ -241,4 +330,12 @@ onMounted(async () => {
 }
 
 .feedback-input { margin: 12px 0; }
+
+.offline-bar {
+  margin: 8px 16px; padding: 8px 12px;
+  background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 8px; font-size: 12px; color: var(--vct-warning);
+  text-align: center;
+  .offline-icon { margin-right: 4px; }
+}
 </style>

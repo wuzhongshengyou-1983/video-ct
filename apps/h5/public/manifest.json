@@ -1,0 +1,28 @@
+{
+  "name": "视频 CT · 短视频博主 AI 体检",
+  "short_name": "视频CT",
+  "description": "用医学 CT 方式诊断你的短视频 · 6维18点位 · 90秒出报告",
+  "start_url": "/?utm_source=pwa",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

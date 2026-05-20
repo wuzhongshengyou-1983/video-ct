@@ -1,8 +1,13 @@
 """鉴权路由."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+import json
 
+from fastapi import APIRouter, Query
+from fastapi.responses import RedirectResponse
+from loguru import logger
+
+from app.config import settings
 from app.core.exceptions import UnauthorizedError
 from app.deps import DbSession, CurrentUser
 from app.schemas.auth import (
@@ -58,6 +63,114 @@ async def wechat_login(payload: WechatLoginRequest, db: DbSession):
         is_new = True
     token = auth_service.issue_token(user)
     return TokenResponse(**token, is_new_user=is_new)
+
+
+@router.get("/wechat/callback")
+async def wechat_oauth_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+):
+    """微信 OAuth 回调 · code 换 openid → 自动登录 → 回跳页面.
+
+    这是微信服务器调用的端点，用户不会直接访问.
+    """
+    from sqlalchemy import select
+    from app.database import get_db
+    from app.models.user import User, UserProfile
+    from app.models.referrer import RewardAccount, ReferrerLevel, ReferrerLink, ReferralRecord
+    from app.services import wechat_service
+
+    # 解析 state 中的 redirect 和 referrer_code
+    redirect_path = "/home"
+    referrer_code = None
+    try:
+        state_data = json.loads(state)
+        redirect_path = state_data.get("redirect", "/home")
+        referrer_code = state_data.get("referrer_code")
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(f"[WechatOAuth] invalid state JSON: {state}")
+
+    try:
+        oauth_data = await wechat_service.code_to_openid(code)
+        openid = oauth_data["openid"]
+    except Exception as exc:
+        logger.error(f"[WechatOAuth] code_to_openid failed: {exc}")
+        if settings.WECHAT_APP_ID.startswith("mock_") or not settings.WECHAT_APP_ID:
+            openid = f"mock_openid_{code[:16]}"
+        else:
+            return RedirectResponse(
+                url=f"/login?error=wechat_oauth_failed&redirect={redirect_path}"
+            )
+
+    # 登录或注册
+    import random as _random
+    import string as _string
+
+    db_gen = get_db()
+    db = await anext(db_gen)
+    try:
+        res = await db.execute(select(User).where(User.wechat_openid == openid))
+        user = res.scalar_one_or_none()
+        is_new = False
+
+        if not user:
+            user = User(
+                wechat_openid=openid,
+                nickname=f"微信用户_{openid[-4:]}",
+            )
+            db.add(user)
+            await db.flush()
+            db.add(UserProfile(user_id=user.id))
+            db.add(RewardAccount(user_id=user.id))
+            db.add(ReferrerLevel(user_id=user.id))
+            link_code = "".join(_random.choices(_string.ascii_uppercase + _string.digits, k=8))
+            db.add(ReferrerLink(inviter_id=user.id, link_code=link_code))
+
+            # 处理推荐人
+            if referrer_code:
+                await _process_referrer(db, user.id, referrer_code)
+
+            await db.commit()
+            await db.refresh(user)
+            is_new = True
+
+        token_data = auth_service.issue_token(user)
+        separator = "&" if "?" in redirect_path else "?"
+        redirect_url = (
+            f"{redirect_path}{separator}"
+            f"wechat_token={token_data['access_token']}"
+        )
+
+        logger.info(
+            f"[WechatOAuth] {'new' if is_new else 'returning'} user "
+            f"openid={openid[:16]} redirect={redirect_path}"
+        )
+        return RedirectResponse(url=redirect_url)
+
+    except Exception as exc:
+        logger.exception(f"[WechatOAuth] callback error: {exc}")
+        return RedirectResponse(
+            url=f"/login?error=wechat_oauth_failed&redirect={redirect_path}"
+        )
+
+
+async def _process_referrer(db, new_user_id: int, referrer_code: str):
+    """处理推荐关系."""
+    from sqlalchemy import select
+    from app.models.referrer import ReferrerLink
+
+    link_res = await db.execute(
+        select(ReferrerLink).where(ReferrerLink.link_code == referrer_code)
+    )
+    link = link_res.scalar_one_or_none()
+    if not link:
+        return
+    db.add(ReferralRecord(
+        inviter_id=link.inviter_id,
+        invitee_id=new_user_id,
+        status="registered",
+    ))
+    logger.info(f"[WechatOAuth] referral recorded: {link.inviter_id} -> {new_user_id}")
 
 
 @router.get("/me", response_model=UserMe)

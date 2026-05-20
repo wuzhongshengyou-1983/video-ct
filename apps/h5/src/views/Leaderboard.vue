@@ -2,53 +2,70 @@
   <div class="page">
     <van-nav-bar title="分享榜单" left-arrow @click-left="router.back()" :border="false" />
 
-    <van-loading v-if="loading" size="24" vertical class="loading-center">加载榜单…</van-loading>
+    <!-- 骨架屏首次加载 -->
+    <SkeletonList v-if="firstLoad" :count="5" :lines="2" />
 
     <!-- 网络异常 -->
-    <div v-if="!loading && networkError" class="error-box vct-card">
+    <div v-if="!firstLoad && networkError" class="error-box vct-card">
       <van-empty image="network" description="网络异常，请检查网络后重试" />
-      <van-button type="primary" block @click="fetchData">重试</van-button>
+      <van-button type="primary" block @click="onRefresh">重试</van-button>
     </div>
 
-    <template v-if="!loading && !networkError && list.length > 0">
-      <div class="board-header">
-        <div class="board-title">🏆 本月分享官 TOP 榜</div>
-        <div class="board-sub">按本月推荐人数排名</div>
-      </div>
-
-      <div class="board-list">
-        <div
-          v-for="(item, index) in list"
-          :key="item.user_id || index"
-          class="board-item vct-card"
-          :class="topCls(index)"
-        >
-          <div class="rank-num" :class="rankCls(index)">
-            <template v-if="index === 0">🥇</template>
-            <template v-else-if="index === 1">🥈</template>
-            <template v-else-if="index === 2">🥉</template>
-            <template v-else>#{{ index + 1 }}</template>
-          </div>
-          <div class="avatar-placeholder">{{ avatarText(item.nickname) }}</div>
-          <div class="user-info">
-            <div class="nickname">{{ item.nickname || '匿名用户' }}</div>
-            <div class="user-level">{{ REFERRER_LEVEL_LABELS[item.level] || item.level || 'Lv.1' }}</div>
-          </div>
-          <div class="user-stats">
-            <div class="stat-referrals">{{ item.monthly_referrals || 0 }}人</div>
-            <div class="stat-reward">{{ item.monthly_reward_cny || item.monthly_rewards_cny || 0 }}元</div>
-          </div>
+    <!-- 下拉刷新包裹 -->
+    <van-pull-refresh
+      v-if="!firstLoad && !networkError"
+      v-model="refreshing"
+      @refresh="onRefresh"
+      success-text="刷新成功"
+      :head-height="80"
+    >
+      <template v-if="list.length > 0">
+        <div class="board-header">
+          <div class="board-title">🏆 本月分享官 TOP 榜</div>
+          <div class="board-sub">按本月推荐人数排名</div>
         </div>
-      </div>
-    </template>
 
-    <!-- 空状态 -->
-    <van-empty v-if="!loading && !networkError && list.length === 0" description="本月暂无排行数据" />
+        <van-list
+          v-model:loading="loading"
+          :finished="finished"
+          finished-text="没有更多了"
+          @load="onLoad"
+        >
+          <div class="board-list">
+            <div
+              v-for="(item, index) in list"
+              :key="item.user_id || index"
+              class="board-item vct-card"
+              :class="topCls(getRealIndex(index))"
+            >
+              <div class="rank-num" :class="rankCls(getRealIndex(index))">
+                <template v-if="getRealIndex(index) === 0">🥇</template>
+                <template v-else-if="getRealIndex(index) === 1">🥈</template>
+                <template v-else-if="getRealIndex(index) === 2">🥉</template>
+                <template v-else>#{{ getRealIndex(index) + 1 }}</template>
+              </div>
+              <div class="avatar-placeholder">{{ avatarText(item.nickname) }}</div>
+              <div class="user-info">
+                <div class="nickname">{{ item.nickname || '匿名用户' }}</div>
+                <div class="user-level">{{ REFERRER_LEVEL_LABELS[item.level] || item.level || 'Lv.1' }}</div>
+              </div>
+              <div class="user-stats">
+                <div class="stat-referrals">{{ item.monthly_referrals || 0 }}人</div>
+                <div class="stat-reward">{{ item.monthly_reward_cny || item.monthly_rewards_cny || 0 }}元</div>
+              </div>
+            </div>
+          </div>
+        </van-list>
+      </template>
+
+      <!-- 空状态 -->
+      <van-empty v-if="allItems.length === 0" description="本月暂无排行数据" />
+    </van-pull-refresh>
 
     <!-- 错误 -->
     <div v-if="errorMsg" class="error-box vct-card">
       <p>{{ errorMsg }}</p>
-      <van-button size="small" @click="fetchData">重试</van-button>
+      <van-button size="small" @click="onRefresh">重试</van-button>
     </div>
   </div>
 </template>
@@ -58,13 +75,25 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { referrerApi } from '@/api'
 import { REFERRER_LEVEL_LABELS } from '@video-ct/shared'
+import { trackPageView } from '@/utils/tracker'
+import SkeletonList from '@/components/SkeletonList.vue'
 
 const router = useRouter()
 
-const loading = ref(true)
-const errorMsg = ref('')
-const networkError = ref(false)
+const allItems = ref<any[]>([])
 const list = ref<any[]>([])
+const firstLoad = ref(true)
+const networkError = ref(false)
+const errorMsg = ref('')
+const refreshing = ref(false)
+const loading = ref(false)
+const finished = ref(false)
+const page = ref(1)
+const PAGE_SIZE = 10
+
+function getRealIndex(index: number) {
+  return (page.value - 2) * PAGE_SIZE + index
+}
 
 function topCls(index: number) {
   if (index === 0) return 'top-1'
@@ -82,12 +111,11 @@ function avatarText(name: string) {
   return (name || '?').charAt(0).toUpperCase()
 }
 
-async function fetchData() {
-  loading.value = true
-  errorMsg.value = ''
+async function fetchAllItems() {
   networkError.value = false
+  errorMsg.value = ''
   try {
-    list.value = await referrerApi.leaderboard()
+    allItems.value = await referrerApi.leaderboard()
   } catch (e: any) {
     if (!navigator.onLine) {
       networkError.value = true
@@ -96,17 +124,41 @@ async function fetchData() {
     } else {
       errorMsg.value = e.message || '加载失败'
     }
-  } finally {
-    loading.value = false
   }
 }
 
-onMounted(fetchData)
+function onLoad() {
+  const start = (page.value - 1) * PAGE_SIZE
+  const chunk = allItems.value.slice(start, start + PAGE_SIZE)
+  if (chunk.length > 0) {
+    list.value.push(...chunk)
+    page.value++
+  }
+  loading.value = false
+  if (list.value.length >= allItems.value.length) {
+    finished.value = true
+  }
+}
+
+async function onRefresh() {
+  await fetchAllItems()
+  list.value = []
+  page.value = 1
+  finished.value = false
+  onLoad()
+  refreshing.value = false
+}
+
+onMounted(async () => {
+  trackPageView('leaderboard')
+  await fetchAllItems()
+  firstLoad.value = false
+  onLoad()
+})
 </script>
 
 <style lang="scss" scoped>
 .page { padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); min-height: 100vh; }
-.loading-center { padding-top: 120px; display: flex; justify-content: center; }
 
 .board-header {
   text-align: center; padding: 20px 0 16px;

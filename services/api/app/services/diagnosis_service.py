@@ -338,6 +338,12 @@ async def run_full_pipeline(
                 f"score={result['overall_score']} grade={result['grade']} "
                 f"total={total_elapsed:.2f}s ==="
             )
+
+            # ---- 步骤 7：推送订阅消息（异步，不阻塞） ----
+            asyncio.create_task(_notify_diagnosis_complete(
+                db, diag.user_id, result["overall_score"], result["grade"], report.id
+            ))
+
             return report
 
         except Exception as exc:
@@ -377,3 +383,27 @@ async def _update_archive(db: AsyncSession, user_id: int, result: dict) -> None:
 
     archive.total_diagnoses += 1
     archive.current_level = result.get("grade", archive.current_level)
+
+
+async def _notify_diagnosis_complete(
+    db, user_id: int, score: int, grade: str, report_id: int,
+) -> None:
+    """异步推送诊断完成订阅消息（fire-and-forget，失败不影响主流程）."""
+    try:
+        from sqlalchemy import select
+        from app.models.user import User
+
+        res = await db.execute(select(User).where(User.id == user_id))
+        user = res.scalar_one_or_none()
+        if not user or not user.wechat_openid:
+            return
+
+        from app.services.wechat_service import notify_diagnosis_complete
+        await notify_diagnosis_complete(
+            openid=user.wechat_openid,
+            report_score=score,
+            report_grade=grade,
+            report_id=report_id,
+        )
+    except Exception as exc:
+        logger.warning(f"[Pipeline] 订阅消息推送失败（非致命）: {exc}")

@@ -13,6 +13,13 @@ export const authApi = {
 // 用户
 export const userApi = {
   updateProfile: (data: any) => http.put('/api/v1/users/me/profile', data),
+  uploadAvatar: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return http.post<unknown, { url: string }>('/api/v1/upload/avatar', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 // 订阅
@@ -20,7 +27,8 @@ export const subscriptionApi = {
   products: () => http.get<unknown, any[]>('/api/v1/subscriptions/products'),
   createOrder: (sku: string, opts: { use_deduction?: boolean; coupon_code?: string; referrer_code?: string } = {}) =>
     http.post<unknown, any>('/api/v1/subscriptions/orders', { sku, ...opts }),
-  mockPay: (orderNo: string) => http.post<unknown, any>(`/api/v1/subscriptions/orders/${orderNo}/mock-pay`),
+  getPayParams: (orderNo: string) => http.get<unknown, any>(`/api/v1/subscriptions/orders/${orderNo}/pay-params`),
+  checkPayStatus: (orderNo: string) => http.get<unknown, any>(`/api/v1/subscriptions/orders/${orderNo}/status`),
   mySubscription: () => http.get<unknown, any>('/api/v1/subscriptions/my'),
   myOrders: () => http.get<unknown, any[]>('/api/v1/subscriptions/orders'),
 }
@@ -79,4 +87,26 @@ export const aiApi = {
   generate: (topic: string, track?: string) =>
     http.post<unknown, any>('/api/v1/ai/content/generate', { topic, track }),
   agents: () => http.get<unknown, any>('/api/v1/ai/agents'),
+}
+
+// 埋点
+export const analyticsApi = {
+  sendEvents: (events: any[]) =>
+    http.post<unknown, void>('/api/v1/analytics/events', { events }, { _noToast: true }),
+}
+
+// 微信
+export const wechatApi = {
+  jsSdkSign: (url: string) =>
+    http.get<unknown, {
+      app_id: string
+      timestamp: number
+      nonce_str: string
+      signature: string
+      js_api_list: string[]
+    }>(`/api/v1/wechat/js-sdk-sign?url=${encodeURIComponent(url)}`),
+  oauthUrl: (redirect: string = '/home', ref?: string) =>
+    http.get<unknown, { url: string }>(
+      `/api/v1/wechat/oauth-url?redirect=${encodeURIComponent(redirect)}${ref ? `&ref=${ref}` : ''}`,
+    ),
 }

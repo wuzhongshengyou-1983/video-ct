@@ -33,6 +33,18 @@ router.beforeEach(async (to) => {
     document.title = `${to.meta.title} · 视频 CT`
   }
   const userStore = useUserStore()
+
+  // 微信 OAuth 回调：URL 中有 wechat_token → 自动登录
+  const wechatToken = to.query.wechat_token as string | undefined
+  if (wechatToken) {
+    userStore.setToken(wechatToken)
+    await userStore.fetchMe()
+    // 移除 wechat_token 参数，清理 URL
+    const cleanQuery = { ...to.query }
+    delete cleanQuery.wechat_token
+    return { path: to.path, query: cleanQuery, replace: true }
+  }
+
   if (NO_AUTH.has(to.path)) return true
   if (!userStore.token) {
     return { path: '/login', query: { redirect: to.fullPath } }

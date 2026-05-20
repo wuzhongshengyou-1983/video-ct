@@ -64,7 +64,7 @@
 
         <!-- 风险等级 -->
         <div v-if="positioning.risk_level" class="risk-tag" :class="riskCls(positioning.risk_level)">
-          风险等级：{{ positioning.risk_level }}
+          风险等级：{{ RISK_LEVELS[positioning.risk_level] || positioning.risk_level }}
         </div>
       </section>
 
@@ -162,6 +162,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Toast } from 'vant'
 import { positioningApi } from '@/api'
+import { RISK_LEVELS, MONETIZATION_ARCHETYPES } from '@video-ct/shared'
 
 const router = useRouter()
 

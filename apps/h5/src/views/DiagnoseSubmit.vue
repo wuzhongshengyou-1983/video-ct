@@ -81,10 +81,12 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Toast } from 'vant'
+import { Toast, Dialog } from 'vant'
 import { diagnosisApi, benchmarkApi } from '@/api'
+import { trackPageView, trackConversion } from '@/utils/tracker'
 import { useUserStore } from '@/stores/user'
 import { DIAGNOSIS_TYPES } from '@video-ct/shared'
+import { subscribeDiagnosisComplete } from '@/utils/subscribe-message'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -118,6 +120,7 @@ const used = computed(() => userStore.me?.monthly_free_scans_used ?? 0)
 const quota = computed(() => userStore.me?.monthly_free_scans_quota ?? 3)
 
 onMounted(async () => {
+  trackPageView('diagnose_submit')
   try {
     const ts = await benchmarkApi.tracks()
     tracks.value = [
@@ -163,12 +166,26 @@ async function submit() {
 
   loading.value = true
   try {
+    trackConversion('diagnose_submitted', { track: form.track, diagnosis_type: form.diagnosis_type })
     const diag = await diagnosisApi.submit({
       video_url: form.video_url.trim(),
       track: form.track === '通用' ? undefined : form.track,
       diagnosis_type: form.diagnosis_type,
     })
     Toast.success('诊断已开始')
+
+    // 询问是否订阅通知
+    Dialog.confirm({
+      title: '诊断完成后通知你？',
+      message: '开启微信通知，诊断完成后第一时间提醒你查看报告',
+      confirmButtonText: '好的',
+      cancelButtonText: '不用了',
+    }).then(() => {
+      subscribeDiagnosisComplete()
+    }).catch(() => {
+      // 用户拒绝，无操作
+    })
+
     router.replace(`/diagnose/${diag.id}`)
   } catch (e: any) {
     if (e.status === 402) {

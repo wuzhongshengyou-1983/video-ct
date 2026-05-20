@@ -159,3 +159,74 @@ export const ROLES = {
 } as const
 
 export type Role = (typeof ROLES)[keyof typeof ROLES]
+
+// ─── 通用 ──────────────────────────────────────────
+
+/** 开发模式万能验证码 */
+export const DEV_OTP_CODE = '0000'
+
+/** 成长等级标签（L1-L6） */
+export const GRADE_LABELS: Record<string, string> = {
+  L1: '一级 · 新手',
+  L2: '二级 · 入门',
+  L3: '三级 · 进阶',
+  L4: '四级 · 精通',
+  L5: '五级 · 专家',
+  L6: '六级 · 大师',
+}
+
+/** 成长档案六大指标键 → 中文标签映射 */
+export const ARCHIVE_METRIC_LABELS: Record<string, string> = {
+  ct_score: 'CT分',
+  hook: '吸引力',
+  retention: '留存力',
+  interaction: '互动率',
+  conversion: '转化力',
+  persona: '人设值',
+}
+
+// ─── 分享官 ────────────────────────────────────────
+
+/** 每有效推荐奖励金额（元） */
+export const REFERRER_REWARD_CNY = 18
+
+/** 抵扣 PRO 月卡所需推荐人数 */
+export const REFERRER_DEDUCT_COUNT = 6
+
+// ─── 人设原型（12 原型） ───────────────────────────
+
+/** 品牌 12 原型定义 */
+export const PERSONA_ARCHETYPES = [
+  { key: 'creator', name: '创造者', emoji: '🎨', tagline: '创新与想象力' },
+  { key: 'caregiver', name: '照顾者', emoji: '🤝', tagline: '关怀与保护' },
+  { key: 'ruler', name: '统治者', emoji: '👑', tagline: '权威与秩序' },
+  { key: 'jester', name: '弄臣', emoji: '🤡', tagline: '欢乐与幽默' },
+  { key: 'everyman', name: '凡人', emoji: '😊', tagline: '真实与共鸣' },
+  { key: 'lover', name: '情人', emoji: '💕', tagline: '魅力与情感' },
+  { key: 'hero', name: '英雄', emoji: '🦸', tagline: '勇气与突破' },
+  { key: 'outlaw', name: '反叛者', emoji: '🤘', tagline: '颠覆与自由' },
+  { key: 'magician', name: '魔术师', emoji: '✨', tagline: '蜕变与奇迹' },
+  { key: 'innocent', name: '天真者', emoji: '🌱', tagline: '纯真与乐观' },
+  { key: 'explorer', name: '探险家', emoji: '🧭', tagline: '探索与冒险' },
+  { key: 'sage', name: '智者', emoji: '🦉', tagline: '智慧与洞见' },
+] as const
+
+// ─── 变现原型 ──────────────────────────────────────
+
+/** 5 大变现原型 */
+export const MONETIZATION_ARCHETYPES = [
+  { key: 'subscription', name: '订阅制', description: '会员/内容订阅，稳定复购', icon: '📦' },
+  { key: 'advertising', name: '广告变现', description: '品牌合作/植入/补贴', icon: '📢' },
+  { key: 'ecommerce', name: '电商带货', description: '直播/橱窗/自有品牌', icon: '🛒' },
+  { key: 'knowledge', name: '知识付费', description: '课程/社群/咨询', icon: '📚' },
+  { key: 'service', name: '服务变现', description: '定制/代运营/私域', icon: '🔧' },
+] as const
+
+// ─── 风险等级 ──────────────────────────────────────
+
+/** 风险等级 */
+export const RISK_LEVELS: Record<string, string> = {
+  low: '低风险',
+  medium: '中风险',
+  high: '高风险',
+}

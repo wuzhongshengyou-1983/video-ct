@@ -35,12 +35,32 @@
       </div>
     </div>
 
-    <!-- 支付中：模拟支付按钮 -->
+    <!-- 待支付：真实支付 -->
     <div v-if="order?.pay_status === 'pending'" class="pay-section">
-      <van-button type="primary" block size="large" :loading="paying" @click="doMockPay">
-        模拟支付 ¥{{ order.amount_cny }}
+      <!-- 微信内 JSAPI 支付 -->
+      <van-button
+        v-if="payChannel === 'wechat'"
+        type="primary" block size="large" :loading="paying"
+        @click="doPay"
+      >
+        微信支付 ¥{{ order.paid_cny ?? order.amount_cny }}
       </van-button>
-      <p class="dev-tip">开发环境，点击即可完成支付</p>
+
+      <!-- 微信外 H5 支付 -->
+      <div v-if="payChannel === 'h5'" class="h5-pay">
+        <p class="h5-tip">请在微信中打开此页面完成支付，或使用下方链接</p>
+        <van-button type="primary" block size="large" @click="openH5Pay">
+          前往微信支付
+        </van-button>
+      </div>
+
+      <!-- DEV 模拟支付（仅开发环境） -->
+      <div v-if="payChannel === 'dev'" class="dev-pay">
+        <van-button type="primary" block size="large" :loading="paying" @click="doMockPay">
+          [DEV] 模拟支付 ¥{{ order.paid_cny ?? order.amount_cny }}
+        </van-button>
+        <p class="dev-tip">开发环境，点击即可完成支付（商户号未配置）</p>
+      </div>
     </div>
 
     <!-- 已支付：成功提示 -->
@@ -61,10 +81,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Toast } from 'vant'
 import { subscriptionApi } from '@/api'
+import { isWechat, wechatPay, openPayUrl } from '@/utils/pay'
+import type { WxPayParams } from '@/utils/pay'
 import { formatDateTime, getPaymentStatusLabel } from '@video-ct/shared'
 
 const router = useRouter()
@@ -76,10 +98,18 @@ const networkError = ref(false)
 const serverError = ref('')
 const paying = ref(false)
 const order = ref<any | null>(null)
+const payParams = ref<WxPayParams | null>(null)
+
+// 支付渠道判断：wechat(微信JSAPI) / h5(微信外H5) / dev(开发模拟)
+const payChannel = computed(() => {
+  if (import.meta.env.DEV) return 'dev'
+  if (isWechat()) return 'wechat'
+  return 'h5'
+})
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let pollStart = 0
-const POLL_MAX_MS = 30_000
+const POLL_MAX_MS = 60_000
 const POLL_INTERVAL = 2000
 
 function goBack() {
@@ -125,16 +155,16 @@ function startPolling() {
   pollTimer = setInterval(async () => {
     if (Date.now() - pollStart > POLL_MAX_MS) {
       stopPolling()
+      Toast.fail('支付超时，请联系客服')
       return
     }
     try {
-      const orders = await subscriptionApi.myOrders()
-      const found = orders?.find((o: any) => o.order_no === orderNo)
-      if (found) {
-        order.value = found
-        if (found.pay_status === 'paid' || found.pay_status === 'cancelled') {
+      const status = await subscriptionApi.checkPayStatus(orderNo)
+      if (status) {
+        order.value = { ...order.value, ...status }
+        if (status.payment_status === 'paid' || status.payment_status === 'cancelled') {
           stopPolling()
-          if (found.pay_status === 'paid') {
+          if (status.payment_status === 'paid') {
             Toast.success('支付成功！')
           }
         }
@@ -152,11 +182,12 @@ function stopPolling() {
   }
 }
 
+// DEV 环境保留模拟支付
 async function doMockPay() {
   paying.value = true
   try {
-    await subscriptionApi.mockPay(orderNo)
-    // 开始轮询确认状态
+    await subscriptionApi.getPayParams(orderNo) // 即使 mock 也走统一流程
+    // DEV 模式直接标记支付成功
     startPolling()
   } catch (e: any) {
     if (e.status && e.status >= 500) {
@@ -166,6 +197,67 @@ async function doMockPay() {
     }
   } finally {
     paying.value = false
+  }
+}
+
+// 真实支付流程
+async function doPay() {
+  paying.value = true
+  try {
+    // 1. 获取支付参数
+    const params = await subscriptionApi.getPayParams(orderNo)
+    if (!params) {
+      Toast.fail('获取支付参数失败')
+      return
+    }
+    payParams.value = params as WxPayParams
+
+    // 2. mock 模式：直接开始轮询
+    if (params.mock) {
+      Toast.success('[DEV] 模拟支付已触发')
+      startPolling()
+      return
+    }
+
+    // 3. 微信 JSAPI 支付
+    if (isWechat() && params.prepay_id) {
+      const result = await wechatPay(params as WxPayParams)
+      if (result.success) {
+        startPolling()
+      } else if (result.message === '用户取消支付') {
+        Toast.fail('支付已取消')
+      } else {
+        Toast.fail(result.message || '支付失败')
+      }
+      return
+    }
+
+    // 4. 微信外 H5 支付
+    if (params.pay_url) {
+      openPayUrl(params.pay_url)
+      // 跳转后开始轮询（用户可能在新窗口完成支付）
+      startPolling()
+      return
+    }
+
+    Toast.fail('暂不支持此支付方式')
+  } catch (e: any) {
+    if (e.status && e.status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
+    } else {
+      Toast.fail(e.message || '支付失败')
+    }
+  } finally {
+    paying.value = false
+  }
+}
+
+// 微信外 H5：复制/打开支付链接
+function openH5Pay() {
+  if (payParams.value?.pay_url) {
+    openPayUrl(payParams.value.pay_url)
+  } else {
+    Toast.fail('支付链接不可用')
   }
 }
 
@@ -208,6 +300,9 @@ onUnmounted(stopPolling)
 
 .pay-section { margin-top: 24px; text-align: center; }
 .dev-tip { font-size: 11px; color: var(--vct-text-3); margin-top: 12px; }
+.h5-pay { margin-top: 12px; }
+.h5-tip { font-size: 13px; color: var(--vct-text-3); margin-bottom: 16px; line-height: 1.6; }
+.dev-pay { margin-top: 8px; }
 
 .success-section { margin-top: 24px; text-align: center; }
 .success-icon {
