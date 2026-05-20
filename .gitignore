@@ -1,0 +1,74 @@
+# ====================== Secrets (MUST IGNORE) ======================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+.secrets/
+
+# ====================== Node ======================
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# ====================== Build outputs ======================
+dist/
+build/
+.output/
+.nuxt/
+.next/
+.cache/
+.turbo/
+.parcel-cache/
+*.tsbuildinfo
+
+# ====================== Python ======================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ====================== IDE ======================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ====================== Logs ======================
+logs/
+*.log
+
+# ====================== Local data ======================
+*.sqlite
+*.sqlite3
+*.db
+storage/
+uploads/
+tmp/
+
+# ====================== Misc ======================
+.eslintcache
+.stylelintcache
+*.local
