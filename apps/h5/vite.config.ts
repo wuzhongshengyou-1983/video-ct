@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
+        '@video-ct/shared': resolve(__dirname, '../../packages/shared/src'),
       },
     },
     server: {

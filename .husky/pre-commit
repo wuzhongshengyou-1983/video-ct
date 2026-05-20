@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Video CT · Pre-commit 闸门
+npx lint-staged

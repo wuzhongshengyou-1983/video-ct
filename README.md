@@ -25,9 +25,9 @@ PRO 99/月 · MAX 499/月 · 每月免费 3 次扫描 · 单次 19 元
 - Node.js ≥ 20（推荐用 nvm/fnm）
 - pnpm ≥ 9（`npm i -g pnpm`）
 - Python ≥ 3.11（推荐 3.13）
-- Docker Desktop（可选，用于 PG/Redis/Kafka；不装也能用 SQLite 跑通）
+- Docker Desktop
 
-### 30 秒拉起
+### 方式 A：纯本地（无 Docker，SQLite 模式）
 
 ```bash
 # 1. 复制环境变量
@@ -37,12 +37,11 @@ cp .env.example .env.local
 # 2. 安装前端依赖
 pnpm install
 
-# 3. 启动后端（端口 8000）
+# 3. 启动后端（端口 8000，默认 SQLite）
 cd services/api
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-alembic upgrade head        # 跑数据库迁移
-python scripts/seed.py      # 初始化基础数据
+python scripts/seed.py      # 初始化产品目录 + 对标库样例
 uvicorn app.main:app --reload --port 8000
 
 # 4. 另开终端，启动 H5（端口 5173）
@@ -51,11 +50,32 @@ cd apps/h5 && pnpm dev
 # 5. 浏览器打开 http://localhost:5173
 ```
 
-### Docker Compose 一键起全套（可选）
+### 方式 B：Docker Compose 一键全套
 
 ```bash
-docker-compose up -d   # postgres + redis + kafka + minio + milvus
-make dev               # 启动后端 + 4 端前端
+cp .env.example .env.docker
+make docker-up   # postgres + redis + minio + 后端 API（端口 8000）
+
+# 另开终端启动前端
+pnpm install
+make dev-h5      # H5（端口 5173）
+```
+
+启动后访问：
+- H5 主页: http://localhost:5173
+- API 文档: http://localhost:8000/docs
+- 健康检查: http://localhost:8000/healthz
+- MinIO 控制台: http://localhost:9001（minioadmin / minioadmin123）
+
+### 常用命令
+
+```bash
+make help        # 查看所有可用命令
+make lint        # 全仓 Lint（Ruff + ESLint）
+make test        # 全仓测试（pytest + pnpm test）
+make seed        # 初始化种子数据
+make docker-up   # 启动 Docker 依赖
+make docker-down # 停止 Docker 依赖
 ```
 
 ---
@@ -155,6 +175,42 @@ AI：  DeepSeek + 硅基流动（多模型路由）+ LangGraph（Agent 编排）
 ## 贡献指南
 
 见 `CONTRIBUTING.md`
+
+## 5 窗口开发计划
+
+| 窗口 | 主题 | 状态 |
+|------|------|------|
+| 窗口 1 | 项目骨架初始化（Monorepo + API + H5 + Admin + Consultant + Docs） | Done |
+| 窗口 2 | 核心业务 API（鉴权/订阅/诊断/对标/档案/人设/定位/分享官/AI Agent） | Done |
+| 窗口 3 | 前端页面开发（H5 16 路由 + Admin + Consultant + Docs） | Done |
+| 窗口 4 | Docker 化 + CI/CD + 环境完整性 | Done |
+| 窗口 5 | 端到端测试 + CI 强化 + Pre-commit 闸门 | Done |
+
+### 窗口 5 交付物
+- `tests/e2e/` — Playwright E2E 测试骨架（H5 关键路径 + API 健康检查）
+- `.github/workflows/ci.yml` — 新增 test-backend / test-e2e job
+- `.husky/pre-commit` — lint-staged 闸门（检查暂存 .ts/.vue）
+- `package.json` — lint-staged 配置 + `test:e2e` 脚本
+- `docker-compose.yml` — 全部服务含 healthcheck
+
+### 运行测试
+
+```bash
+# 后端单元测试
+cd services/api && pip install -r requirements.txt && pytest tests/ -v
+
+# E2E 测试（需要后端 + H5 已启动）
+pnpm test:e2e                    # 或: npx playwright test --config tests/e2e/playwright.config.ts
+
+# 仅 API 健康检查
+npx playwright test --config tests/e2e/playwright.config.ts api-health
+
+# 仅 H5 关键路径
+npx playwright test --config tests/e2e/playwright.config.ts h5-critical-path
+
+# 查看 E2E 报告
+npx playwright show-report playwright-report/
+```
 
 ## 许可证
 

@@ -1,0 +1,103 @@
+# =============================================================================
+# Video CT · CD 流水线（骨架）
+# 触发: push tag v* (如 v0.1.0)
+# 构建 Docker 镜像 → 推送到 GitHub Container Registry → 部署
+# =============================================================================
+
+name: CD
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION: "20"
+
+jobs:
+  # ===================== Build & Push Docker Images =====================
+  build-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    strategy:
+      matrix:
+        include:
+          - target: api
+            dockerfile: infra/docker/Dockerfile.api
+            context: .
+          - target: h5
+            dockerfile: infra/docker/Dockerfile.h5
+            context: .
+          - target: admin
+            dockerfile: infra/docker/Dockerfile.admin
+            context: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.target }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===================== Deploy（占位） =====================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-push
+    if: false  # 占位，生产环境替换为真实条件（如 startsWith(github.ref, 'refs/tags/v')）
+
+    steps:
+      - name: Deploy placeholder
+        run: |
+          echo "========================================"
+          echo " CD · 部署步骤（占位）"
+          echo "========================================"
+          echo ""
+          echo "生产环境部署时，替换以下步骤："
+          echo "  1. SSH 连接到 ECS 服务器"
+          echo "  2. docker compose pull（拉取最新镜像）"
+          echo "  3. docker compose up -d（滚动更新）"
+          echo "  4. healthcheck 验证"
+          echo "  5. 清理旧镜像"
+          echo ""
+          echo "示例:"
+          echo "  ssh deploy@your-ecs-ip 'cd /opt/video-ct && docker compose pull && docker compose up -d'"
+          echo ""
+          echo "========================================"

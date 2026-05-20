@@ -1,0 +1,1388 @@
+openapi: "3.0.3"
+info:
+  title: 视频 CT API
+  description: |
+    短视频博主 AI 诊断 + 对标 + 陪跑 SaaS 平台开放 API。
+
+    ## 鉴权
+    - **用户端**: JWT Bearer Token（通过 `/auth/otp/verify` 获取）
+    - **开放端**: API Key（`X-API-Key` 头）
+    - **高级安全**: HMAC-SHA256 签名
+
+    ## 基础 URL
+    - 生产: `https://api.video-ct.cn`
+    - 开发: `http://localhost:8000`
+
+    ## 通用响应格式
+    所有响应均由 `ApiResponse<T>` 包裹：
+    ```json
+    { "code": "OK", "message": "success", "data": { ... } }
+    ```
+  version: "0.1.0"
+  contact:
+    name: 视频 CT 团队
+    email: dev@video-ct.cn
+    url: https://video-ct.cn
+
+servers:
+  - url: https://api.video-ct.cn/api/v1
+    description: 生产环境
+  - url: http://localhost:8000/api/v1
+    description: 本地开发
+
+tags:
+  - name: auth
+    description: 鉴权（登录/注册/用户信息）
+  - name: diagnosis
+    description: 诊断（提交/查询/报告/反馈）
+  - name: benchmark
+    description: 对标（赛道/Top10/差距分析）
+  - name: archive
+    description: 成长档案
+  - name: persona
+    description: 人设扫描
+  - name: positioning
+    description: 商业定位
+  - name: referrer
+    description: 分享官（裂变/奖励/提现）
+  - name: subscription
+    description: 订阅与订单
+
+# ═══════════════════════════════════════════════════
+#  Security Schemes
+# ═══════════════════════════════════════════════════
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Token（通过 `/auth/otp/verify` 获取）
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key（开放端使用）
+
+  # ─── 通用 Schemas ───────────────────────────────
+
+  schemas:
+
+    # 通用
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码，`OK` 表示成功
+          example: "OK"
+        message:
+          type: string
+          description: 人类可读的状态描述
+          example: "success"
+        data:
+          description: 业务数据（类型视端点而定）
+      required: [code, message]
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "UNAUTHORIZED"
+        message:
+          type: string
+          example: "未登录或 token 已过期"
+        trace_id:
+          type: string
+          example: "abc123def456"
+        details:
+          type: object
+      required: [code, message]
+
+    Page:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+        page:
+          type: integer
+          default: 1
+        size:
+          type: integer
+          default: 20
+
+    # ─── 鉴权 ────────────────────────────────────
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          example: 604800
+        user_id:
+          type: integer
+          example: 1
+        nickname:
+          type: string
+          example: "美食博主老王"
+        role:
+          type: string
+          example: "user"
+        is_new_user:
+          type: boolean
+          example: true
+      required: [access_token, token_type, expires_in, user_id, nickname, role, is_new_user]
+
+    PhoneOTPRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: "^1[3-9]\\d{9}$"
+          example: "13800138000"
+      required: [phone]
+
+    PhoneOTPVerify:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: "^1[3-9]\\d{9}$"
+        code:
+          type: string
+          minLength: 4
+          maxLength: 6
+        referrer_code:
+          type: string
+          description: 可选，分享官推荐码
+      required: [phone, code]
+
+    # ─── 用户 ────────────────────────────────────
+
+    UserMe:
+      type: object
+      properties:
+        id:
+          type: integer
+        nickname:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        role:
+          type: string
+        is_realname:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        track:
+          type: string
+          nullable: true
+        platform_main:
+          type: string
+          nullable: true
+        follower_count:
+          type: integer
+        subscription_tier:
+          type: string
+          example: "free"
+        subscription_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        monthly_free_scans_used:
+          type: integer
+          example: 1
+        monthly_free_scans_quota:
+          type: integer
+          example: 3
+        cash_balance_cny:
+          type: integer
+          description: 现金余额（分）
+        deduction_balance_cny:
+          type: integer
+          description: 抵扣金余额（分）
+        ticket_balance:
+          type: integer
+          description: 免费诊断券数
+
+    UserProfileIn:
+      type: object
+      properties:
+        nickname:
+          type: string
+        avatar_url:
+          type: string
+        track:
+          type: string
+          description: 内容赛道
+        platform_main:
+          type: string
+          description: 主平台
+        follower_count:
+          type: integer
+        bio:
+          type: string
+        goals:
+          type: string
+
+    # ─── 诊断 ────────────────────────────────────
+
+    DiagnosisSubmit:
+      type: object
+      properties:
+        video_url:
+          type: string
+          minLength: 4
+          maxLength: 1000
+          example: "https://v.douyin.com/xxxxx/"
+        track:
+          type: string
+          example: "美食"
+        diagnosis_type:
+          type: string
+          enum: [ct_basic, ct_full]
+          default: ct_basic
+        title:
+          type: string
+        description:
+          type: string
+      required: [video_url]
+
+    DiagnosisOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        video_url:
+          type: string
+        video_platform:
+          type: string
+          nullable: true
+          example: "douyin"
+        status:
+          type: string
+          enum: [pending, crawling, analyzing, completed, failed]
+        diagnosis_type:
+          type: string
+        progress_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - video_url
+        - status
+        - diagnosis_type
+        - progress_pct
+        - created_at
+
+    ReportDimension:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        advantages:
+          type: array
+          items:
+            type: string
+        findings:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+      required: [score, advantages, findings, suggestions]
+
+    ReportFinding:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          description: 视频时间点，如 "0:07"
+          example: "0:07"
+        dimension:
+          type: string
+          example: "曝光率"
+        problem:
+          type: string
+          example: "黄金3秒后信息密度骤降"
+        suggestion:
+          type: string
+          example: "保持前15秒的节奏密度"
+      required: [timestamp, dimension, problem, suggestion]
+
+    ReportOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        diagnosis_id:
+          type: integer
+        overall_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        grade:
+          type: string
+          enum: [S, A, B, C, D]
+        dimensions:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ReportDimension"
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportFinding"
+        suggestions:
+          type: array
+          items:
+            type: object
+        benchmark_gap:
+          type: object
+          nullable: true
+        html_path:
+          type: string
+          nullable: true
+        pdf_path:
+          type: string
+          nullable: true
+        model_used:
+          type: string
+          nullable: true
+        user_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        consultant_reviewed:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - diagnosis_id
+        - overall_score
+        - grade
+        - dimensions
+        - findings
+        - consultant_reviewed
+        - created_at
+
+    ReportFeedback:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        feedback:
+          type: string
+          example: "分析很准确，建议再具体一些"
+      required: [rating]
+
+    # ─── 对标 ────────────────────────────────────
+
+    BenchmarkItem:
+      type: object
+      properties:
+        rank:
+          type: integer
+          example: 1
+        account_id:
+          type: string
+          example: "dy_user_12345"
+        nickname:
+          type: string
+          example: "美食家老张"
+        platform:
+          type: string
+          example: "douyin"
+        follower_count:
+          type: integer
+          example: 520000
+        avatar_url:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        style_archetype:
+          type: string
+          nullable: true
+        monetization:
+          type: string
+          nullable: true
+
+    # ─── 成长档案 ─────────────────────────────────
+
+    ArchiveOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        archive_no:
+          type: string
+          example: "ARC2026052000001"
+        track:
+          type: string
+          nullable: true
+        current_level:
+          type: string
+          enum: [L1, L2, L3, L4, L5, L6]
+          example: "L3"
+        initial_baseline:
+          type: object
+          nullable: true
+        total_diagnoses:
+          type: integer
+          example: 27
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - archive_no
+        - current_level
+        - total_diagnoses
+        - created_at
+
+    # ─── 人设 ────────────────────────────────────
+
+    PersonaScanRequest:
+      type: object
+      properties:
+        sample_video_urls:
+          type: array
+          items:
+            type: string
+          example: ["https://v.douyin.com/xxxxx/"]
+        description:
+          type: string
+          example: "我想做一个有态度的美食测评博主"
+
+    PersonaOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        primary_archetype:
+          type: string
+          nullable: true
+          example: "气场型"
+        sub_archetype:
+          type: string
+          nullable: true
+          example: "反差大佬"
+        contrast_point:
+          type: string
+          nullable: true
+        self_tags:
+          type: object
+          nullable: true
+        audience_tags:
+          type: object
+          nullable: true
+        scores:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            气场力: 82
+            干货力: 75
+            共情力: 60
+            趣味力: 70
+            商业力: 55
+        consistency_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        canvas:
+          type: object
+          nullable: true
+        diagnosis:
+          type: object
+          nullable: true
+        drift_alert:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - scores
+        - consistency_score
+        - drift_alert
+        - created_at
+
+    # ─── 商业定位 ─────────────────────────────────
+
+    PositioningScanRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "我现在做美食内容，粉丝5万，想变现"
+
+    PositioningOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        scores:
+          type: object
+          additionalProperties:
+            type: integer
+        monetization_paths:
+          type: object
+        recommended_archetype:
+          type: string
+          nullable: true
+        recommended_routes:
+          type: object
+          nullable: true
+        avoid_routes:
+          type: object
+          nullable: true
+        roadmap_12m:
+          type: object
+          nullable: true
+        risk_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        canvas_bmc:
+          type: object
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - scores
+        - monetization_paths
+        - risk_level
+        - created_at
+
+    # ─── 分享官 ───────────────────────────────────
+
+    ReferrerInfoOut:
+      type: object
+      properties:
+        link_code:
+          type: string
+          example: "ABCD1234"
+        level:
+          type: string
+          example: "🥈 银牌"
+        total_valid_referrals:
+          type: integer
+          example: 15
+        total_rewards_cny:
+          type: integer
+          description: 累计奖励（分）
+          example: 32000
+        cash_balance_cny:
+          type: integer
+          description: 可提现余额（分）
+        deduction_balance_cny:
+          type: integer
+          description: 抵扣金余额（分）
+        ticket_balance:
+          type: integer
+          description: 免费诊断券
+        next_level_at:
+          type: integer
+          description: 距下一级还需推荐数
+          example: 16
+        next_level_name:
+          type: string
+          nullable: true
+          example: "🥇 金牌"
+      required:
+        - link_code
+        - level
+        - total_valid_referrals
+        - total_rewards_cny
+        - cash_balance_cny
+        - deduction_balance_cny
+        - ticket_balance
+        - next_level_at
+
+    # ─── 订阅 ────────────────────────────────────
+
+    ProductOut:
+      type: object
+      properties:
+        sku:
+          type: string
+          example: "pro_monthly"
+        name:
+          type: string
+          example: "Pro 月卡"
+        tier:
+          type: string
+          enum: [free, pro, max]
+        billing_cycle:
+          type: string
+          enum: [monthly, quarterly, yearly, once]
+        price_cny:
+          type: integer
+          description: 价格（分）
+          example: 9900
+        description:
+          type: string
+          nullable: true
+        features:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required: [sku, name, tier, billing_cycle, price_cny]
+
+    OrderCreate:
+      type: object
+      properties:
+        sku:
+          type: string
+          example: "pro_monthly"
+        coupon_code:
+          type: string
+        use_deduction:
+          type: boolean
+          default: false
+        referrer_code:
+          type: string
+      required: [sku]
+
+    OrderOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_no:
+          type: string
+          example: "VCT20260520103000001"
+        sku:
+          type: string
+        total_cny:
+          type: integer
+          description: 订单总额（分）
+        deduction_cny:
+          type: integer
+          description: 抵扣金额（分）
+        paid_cny:
+          type: integer
+          description: 实付金额（分）
+        payment_status:
+          type: string
+          enum: [pending, paid, cancelled, refunded]
+        pay_url:
+          type: string
+          nullable: true
+          description: 微信支付链接
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - order_no
+        - sku
+        - total_cny
+        - deduction_cny
+        - paid_cny
+        - payment_status
+        - created_at
+
+    SubscriptionOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        tier:
+          type: string
+        status:
+          type: string
+          enum: [active, expired, cancelled]
+        started_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        auto_renew:
+          type: boolean
+      required:
+        - id
+        - sku
+        - tier
+        - status
+        - started_at
+        - expires_at
+        - auto_renew
+
+# ═══════════════════════════════════════════════════
+#  Paths
+# ═══════════════════════════════════════════════════
+
+paths:
+
+  # ─── Auth ───────────────────────────────────────
+
+  /auth/otp/send:
+    post:
+      tags: [auth]
+      summary: 发送手机验证码
+      operationId: sendOTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneOTPRequest"
+      responses:
+        "200":
+          description: 发送成功（开发模式含 dev_code）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          sent:
+                            type: boolean
+                          dev_code:
+                            type: string
+
+  /auth/otp/verify:
+    post:
+      tags: [auth]
+      summary: 验证码登录/注册
+      operationId: verifyOTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneOTPVerify"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: 验证码错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: 获取当前用户完整信息
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 用户信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserMe"
+        "401":
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Diagnosis ──────────────────────────────────
+
+  /diagnoses/submit:
+    post:
+      tags: [diagnosis]
+      summary: 提交视频诊断任务
+      description: |
+        提交一个视频链接，启动 AI 诊断流程。
+        - 免费用户每月 3 次
+        - 诊断在后台异步执行，完成后通过报告接口获取结果
+      operationId: submitDiagnosis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiagnosisSubmit"
+            example:
+              video_url: "https://v.douyin.com/xxxxx/"
+              track: "美食"
+              diagnosis_type: "ct_basic"
+      responses:
+        "200":
+          description: 诊断任务已创建（后台处理中）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/DiagnosisOut"
+        "402":
+          description: 额度已用完，需要付费
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 调用频率超限
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /diagnoses/{diagnosis_id}/report:
+    get:
+      tags: [diagnosis]
+      summary: 获取诊断报告
+      description: 获取诊断完成后的完整报告。如果诊断尚未完成，data 为 null。
+      operationId: getReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: diagnosis_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 诊断 ID
+      responses:
+        "200":
+          description: 诊断报告
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ReportOut"
+        "404":
+          description: 报告不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /diagnoses/{diagnosis_id}/report/feedback:
+    post:
+      tags: [diagnosis]
+      summary: 提交报告反馈
+      operationId: submitFeedback
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: diagnosis_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportFeedback"
+      responses:
+        "200":
+          description: 反馈已提交
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          ok:
+                            type: boolean
+
+  # ─── Benchmark ──────────────────────────────────
+
+  /benchmarks/top10/{track}:
+    get:
+      tags: [benchmark]
+      summary: 获取赛道 Top 10 博主
+      description: 返回指定赛道的头部 10 位博主及其公开数据
+      operationId: getTop10
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: track
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 赛道名称（如"美食"、"科技"、"穿搭"）
+          example: "美食"
+      responses:
+        "200":
+          description: Top 10 列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BenchmarkItem"
+
+  /benchmarks/tracks:
+    get:
+      tags: [benchmark]
+      summary: 获取所有可对标赛道
+      operationId: listTracks
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        "200":
+          description: 赛道列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            track:
+                              type: string
+
+  # ─── Archive ────────────────────────────────────
+
+  /archives/me:
+    get:
+      tags: [archive]
+      summary: 获取我的成长档案
+      description: 返回当前用户的成长档案。如果没有档案（从未诊断过），data 为 null。
+      operationId: getMyArchive
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 成长档案
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ArchiveOut"
+                        nullable: true
+
+  # ─── Persona ────────────────────────────────────
+
+  /personas/scan:
+    post:
+      tags: [persona]
+      summary: 人设扫描
+      description: |
+        基于用户的视频内容和自述，AI 反向工程博主的人设原型。
+        分析四维核心指标（气场力/干货力/共情力/趣味力/商业力）并给出诊断建议。
+      operationId: scanPersona
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonaScanRequest"
+            example:
+              sample_video_urls:
+                - "https://v.douyin.com/xxxxx/"
+                - "https://v.douyin.com/yyyyy/"
+              description: "我想做一个有态度、有点毒舌但又真诚的美食测评博主"
+      responses:
+        "200":
+          description: 人设扫描结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PersonaOut"
+
+  /personas/me:
+    get:
+      tags: [persona]
+      summary: 获取我的最新人设档案
+      operationId: getMyPersona
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 人设档案（null 表示未扫描过）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PersonaOut"
+                        nullable: true
+
+  /personas/archetypes:
+    get:
+      tags: [persona]
+      summary: 获取所有人设原型列表
+      description: 无需鉴权，返回完整的人设原型体系
+      operationId: listArchetypes
+      security: []
+      responses:
+        "200":
+          description: 人设原型体系
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          气场型:
+                            type: array
+                            items:
+                              type: string
+                          干货型:
+                            type: array
+                            items:
+                              type: string
+                          共情型:
+                            type: array
+                            items:
+                              type: string
+                          趣味型:
+                            type: array
+                            items:
+                              type: string
+
+  # ─── Positioning ────────────────────────────────
+
+  /positionings/scan:
+    post:
+      tags: [positioning]
+      summary: 商业定位扫描
+      description: |
+        基于博主的赛道、粉丝量、现状，AI 推荐最优商业定位和变现路径。
+        包含 12 个月路线图、BMC 商业画布、风险等级评估。
+      operationId: scanPositioning
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PositioningScanRequest"
+            example:
+              description: "我现在做美食内容，粉丝5万，想知道怎么变现"
+      responses:
+        "200":
+          description: 商业定位结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PositioningOut"
+
+  /positionings/me:
+    get:
+      tags: [positioning]
+      summary: 获取我的最新商业定位档案
+      operationId: getMyPositioning
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 商业定位档案（null 表示未扫描过）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PositioningOut"
+                        nullable: true
+
+  # ─── Referrer ───────────────────────────────────
+
+  /referrers/me:
+    get:
+      tags: [referrer]
+      summary: 获取我的分享官信息
+      description: 返回分享等级、有效推荐数、奖励余额、距下一级还需多少推荐
+      operationId: getMyReferrer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 分享官信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ReferrerInfoOut"
+
+  /referrers/link:
+    get:
+      tags: [referrer]
+      summary: 获取我的分享链接/海报
+      operationId: getReferrerLink
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 分享链接
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          link_code:
+                            type: string
+                          h5_url:
+                            type: string
+                          qr_code_url:
+                            type: string
+                          poster_url:
+                            type: string
+
+  # ─── Subscription ───────────────────────────────
+
+  /subscriptions/products:
+    get:
+      tags: [subscription]
+      summary: 获取所有可购买产品
+      description: 返回订阅计划 + 单次诊断产品的完整列表。无需鉴权。
+      operationId: listProducts
+      security: []
+      responses:
+        "200":
+          description: 产品列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ProductOut"
+
+  /subscriptions/orders:
+    post:
+      tags: [subscription]
+      summary: 创建订单
+      description: |
+        创建订阅或单次诊断的支付订单。
+        返回微信支付链接（pay_url），用户扫码/调起支付即可完成。
+      operationId: createOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreate"
+            example:
+              sku: "pro_monthly"
+              use_deduction: false
+      responses:
+        "200":
+          description: 订单已创建
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/OrderOut"
+
+    get:
+      tags: [subscription]
+      summary: 获取我的历史订单
+      operationId: getMyOrders
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 订单列表（最近50条）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/OrderOut"
+
+  /subscriptions/my:
+    get:
+      tags: [subscription]
+      summary: 获取我的当前订阅
+      description: 返回当前有效订阅。如未订阅，data 为 null。
+      operationId: getMySubscription
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 当前订阅（可能为 null）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SubscriptionOut"
+                        nullable: true
+
+  /subscriptions/orders/{order_no}/mock-pay:
+    post:
+      tags: [subscription]
+      summary: 模拟支付（仅开发环境）
+      description: |
+        ::: danger 仅开发模式
+        此端点仅存在于开发环境，用于模拟支付完成以测试订阅流程。
+        生产环境将移除。
+        :::
+      operationId: mockPay
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: order_no
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 订单号
+      responses:
+        "200":
+          description: 模拟支付成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          ok:
+                            type: boolean
+                          order_no:
+                            type: string

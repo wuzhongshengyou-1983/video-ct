@@ -18,7 +18,8 @@
     "axios": "^1.7.9",
     "echarts": "^5.5.1",
     "vue-echarts": "^7.0.3",
-    "dayjs": "^1.11.13"
+    "dayjs": "^1.11.13",
+    "@video-ct/shared": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",

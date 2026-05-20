@@ -39,6 +39,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { diagnosisApi } from '@/api'
+import { DIAGNOSIS_STATUS } from '@video-ct/shared'
 
 const router = useRouter()
 const route = useRoute()
@@ -86,7 +87,7 @@ async function poll() {
   try {
     const data = await diagnosisApi.get(id.value)
     diag.value = data
-    if (['done', 'failed'].includes(data.status)) {
+    if ([DIAGNOSIS_STATUS.COMPLETED, DIAGNOSIS_STATUS.FAILED].includes(data.status)) {
       timer && clearInterval(timer)
       timer = null
     }
@@ -103,7 +104,7 @@ onUnmounted(() => { timer && clearInterval(timer) })
 </script>
 
 <style lang="scss" scoped>
-.page { padding: 0 16px 24px; }
+.page { padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
 .status {
   display: flex; gap: 20px; align-items: center; padding: 24px 16px; margin-top: 12px;
 }

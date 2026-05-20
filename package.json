@@ -9,6 +9,7 @@
     "pnpm": ">=9"
   },
   "scripts": {
+    "prepare": "husky install",
     "dev:h5": "pnpm --filter @video-ct/h5 dev",
     "dev:admin": "pnpm --filter @video-ct/admin dev",
     "dev:consultant": "pnpm --filter @video-ct/consultant dev",
@@ -18,7 +19,17 @@
     "build:consultant": "pnpm --filter @video-ct/consultant build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "clean": "pnpm -r exec rm -rf node_modules dist .turbo"
+    "clean": "pnpm -r exec rm -rf node_modules dist .turbo",
+    "test:e2e": "npx playwright test --config tests/e2e/playwright.config.ts"
+  },
+  "lint-staged": {
+    "*.{ts,vue}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{css,scss}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "typescript": "^5.6.3"

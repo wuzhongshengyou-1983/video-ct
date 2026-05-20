@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqlalchemy import select  # noqa: E402
 
 from app.database import Base, SessionLocal, engine  # noqa: E402
-from app.models import ProductCatalog, User, Benchmark  # noqa: E402
+from app.models import ProductCatalog, User, Benchmark, Coupon  # noqa: E402
 from app.core.security import hash_password  # noqa: E402
 
 
@@ -77,21 +77,111 @@ PRODUCTS = [
 ]
 
 
-BENCHMARKS = [
-    {"track": "职场干货", "platform": "douyin", "account_id": "demo_pro_zc_1", "nickname": "职场老炮（演示）", "follower_count": 5_120_000, "rank_in_track": 1, "style_archetype": "干货型-教学派"},
-    {"track": "职场干货", "platform": "douyin", "account_id": "demo_pro_zc_2", "nickname": "HR 王姐（演示）", "follower_count": 3_400_000, "rank_in_track": 2, "style_archetype": "气场型-行业权威"},
-    {"track": "职场干货", "platform": "douyin", "account_id": "demo_pro_zc_3", "nickname": "面试官说（演示）", "follower_count": 2_800_000, "rank_in_track": 3, "style_archetype": "干货型-拆解派"},
+# 头部对标库 · 10 个赛道 × 3 个头部 = 30 个
+BENCHMARKS: list[dict] = [
+    # ---- 1. 职场干货 ----
+    {"track": "职场干货", "platform": "douyin", "account_id": "demo_zc_1", "nickname": "职场老炮", "follower_count": 5_120_000, "rank_in_track": 1, "style_archetype": "干货型-教学派"},
+    {"track": "职场干货", "platform": "douyin", "account_id": "demo_zc_2", "nickname": "HR王姐", "follower_count": 3_400_000, "rank_in_track": 2, "style_archetype": "气场型-行业权威"},
+    {"track": "职场干货", "platform": "xiaohongshu", "account_id": "demo_zc_3", "nickname": "面试官说", "follower_count": 2_800_000, "rank_in_track": 3, "style_archetype": "干货型-拆解派"},
 
-    {"track": "美食料理", "platform": "douyin", "account_id": "demo_food_1", "nickname": "厨神老张（演示）", "follower_count": 8_200_000, "rank_in_track": 1, "style_archetype": "趣味型-段子手"},
-    {"track": "美食料理", "platform": "douyin", "account_id": "demo_food_2", "nickname": "深夜食堂（演示）", "follower_count": 5_600_000, "rank_in_track": 2, "style_archetype": "共情型-治愈系"},
+    # ---- 2. 美食料理 ----
+    {"track": "美食料理", "platform": "douyin", "account_id": "demo_food_1", "nickname": "厨神老张", "follower_count": 8_200_000, "rank_in_track": 1, "style_archetype": "趣味型-段子手"},
+    {"track": "美食料理", "platform": "douyin", "account_id": "demo_food_2", "nickname": "深夜食堂", "follower_count": 5_600_000, "rank_in_track": 2, "style_archetype": "共情型-治愈系"},
+    {"track": "美食料理", "platform": "bilibili", "account_id": "demo_food_3", "nickname": "料理研究家", "follower_count": 2_100_000, "rank_in_track": 3, "style_archetype": "干货型-教学派"},
 
-    {"track": "穿搭时尚", "platform": "xiaohongshu", "account_id": "demo_fashion_1", "nickname": "时尚 Vivi（演示）", "follower_count": 1_200_000, "rank_in_track": 1, "style_archetype": "气场型-反差大佬"},
-    {"track": "穿搭时尚", "platform": "douyin", "account_id": "demo_fashion_2", "nickname": "穿搭研究室（演示）", "follower_count": 980_000, "rank_in_track": 2, "style_archetype": "干货型-资源派"},
+    # ---- 3. 穿搭时尚 ----
+    {"track": "穿搭时尚", "platform": "xiaohongshu", "account_id": "demo_fashion_1", "nickname": "时尚Vivi", "follower_count": 1_200_000, "rank_in_track": 1, "style_archetype": "气场型-反差大佬"},
+    {"track": "穿搭时尚", "platform": "douyin", "account_id": "demo_fashion_2", "nickname": "穿搭研究室", "follower_count": 980_000, "rank_in_track": 2, "style_archetype": "干货型-资源派"},
+    {"track": "穿搭时尚", "platform": "douyin", "account_id": "demo_fashion_3", "nickname": "潮人阿Ken", "follower_count": 760_000, "rank_in_track": 3, "style_archetype": "趣味型-挑战派"},
 
-    {"track": "育儿亲子", "platform": "douyin", "account_id": "demo_baby_1", "nickname": "豆豆妈成长记（演示）", "follower_count": 2_300_000, "rank_in_track": 1, "style_archetype": "共情型-闺蜜型"},
+    # ---- 4. 育儿亲子 ----
+    {"track": "育儿亲子", "platform": "douyin", "account_id": "demo_baby_1", "nickname": "豆豆妈成长记", "follower_count": 2_300_000, "rank_in_track": 1, "style_archetype": "共情型-闺蜜型"},
+    {"track": "育儿亲子", "platform": "xiaohongshu", "account_id": "demo_baby_2", "nickname": "儿科医生张爸爸", "follower_count": 1_800_000, "rank_in_track": 2, "style_archetype": "气场型-行业权威"},
+    {"track": "育儿亲子", "platform": "douyin", "account_id": "demo_baby_3", "nickname": "育儿百科李老师", "follower_count": 1_500_000, "rank_in_track": 3, "style_archetype": "干货型-教学派"},
 
-    {"track": "科技数码", "platform": "bilibili", "account_id": "demo_tech_1", "nickname": "科技阿杰（演示）", "follower_count": 4_500_000, "rank_in_track": 1, "style_archetype": "干货型-拆解派"},
-    {"track": "科技数码", "platform": "douyin", "account_id": "demo_tech_2", "nickname": "数码老炮（演示）", "follower_count": 3_100_000, "rank_in_track": 2, "style_archetype": "气场型-行业权威"},
+    # ---- 5. 科技数码 ----
+    {"track": "科技数码", "platform": "bilibili", "account_id": "demo_tech_1", "nickname": "科技阿杰", "follower_count": 4_500_000, "rank_in_track": 1, "style_archetype": "干货型-拆解派"},
+    {"track": "科技数码", "platform": "douyin", "account_id": "demo_tech_2", "nickname": "数码老炮", "follower_count": 3_100_000, "rank_in_track": 2, "style_archetype": "气场型-行业权威"},
+    {"track": "科技数码", "platform": "douyin", "account_id": "demo_tech_3", "nickname": "极客小白", "follower_count": 2_600_000, "rank_in_track": 3, "style_archetype": "趣味型-体验派"},
+
+    # ---- 6. 知识教育 ----
+    {"track": "知识教育", "platform": "bilibili", "account_id": "demo_edu_1", "nickname": "罗老师讲知识", "follower_count": 6_800_000, "rank_in_track": 1, "style_archetype": "干货型-教学派"},
+    {"track": "知识教育", "platform": "douyin", "account_id": "demo_edu_2", "nickname": "3分钟硬核科普", "follower_count": 4_200_000, "rank_in_track": 2, "style_archetype": "干货型-拆解派"},
+    {"track": "知识教育", "platform": "xiaohongshu", "account_id": "demo_edu_3", "nickname": "每天学点心理学", "follower_count": 3_500_000, "rank_in_track": 3, "style_archetype": "共情型-闺蜜型"},
+
+    # ---- 7. 美妆护肤 ----
+    {"track": "美妆护肤", "platform": "douyin", "account_id": "demo_beauty_1", "nickname": "化妆师Lisa", "follower_count": 7_200_000, "rank_in_track": 1, "style_archetype": "干货型-教学派"},
+    {"track": "美妆护肤", "platform": "xiaohongshu", "account_id": "demo_beauty_2", "nickname": "成分党小K", "follower_count": 2_900_000, "rank_in_track": 2, "style_archetype": "干货型-拆解派"},
+    {"track": "美妆护肤", "platform": "douyin", "account_id": "demo_beauty_3", "nickname": "素人改造日记", "follower_count": 1_600_000, "rank_in_track": 3, "style_archetype": "共情型-治愈系"},
+
+    # ---- 8. 健身运动 ----
+    {"track": "健身运动", "platform": "douyin", "account_id": "demo_fit_1", "nickname": "健身老刘", "follower_count": 9_500_000, "rank_in_track": 1, "style_archetype": "干货型-教学派"},
+    {"track": "健身运动", "platform": "bilibili", "account_id": "demo_fit_2", "nickname": "帕姐陪你练", "follower_count": 6_300_000, "rank_in_track": 2, "style_archetype": "趣味型-挑战派"},
+    {"track": "健身运动", "platform": "douyin", "account_id": "demo_fit_3", "nickname": "跑步教练大李", "follower_count": 3_100_000, "rank_in_track": 3, "style_archetype": "共情型-闺蜜型"},
+
+    # ---- 9. 旅游出行 ----
+    {"track": "旅游出行", "platform": "douyin", "account_id": "demo_travel_1", "nickname": "行走的阿楠", "follower_count": 4_800_000, "rank_in_track": 1, "style_archetype": "氛围型-视觉盛宴"},
+    {"track": "旅游出行", "platform": "xiaohongshu", "account_id": "demo_travel_2", "nickname": "城市漫步指南", "follower_count": 3_200_000, "rank_in_track": 2, "style_archetype": "干货型-资源派"},
+    {"track": "旅游出行", "platform": "douyin", "account_id": "demo_travel_3", "nickname": "民宿体验官", "follower_count": 2_100_000, "rank_in_track": 3, "style_archetype": "共情型-治愈系"},
+
+    # ---- 10. 财经商业 ----
+    {"track": "财经商业", "platform": "douyin", "account_id": "demo_biz_1", "nickname": "商业观察室", "follower_count": 3_900_000, "rank_in_track": 1, "style_archetype": "气场型-行业权威"},
+    {"track": "财经商业", "platform": "bilibili", "account_id": "demo_biz_2", "nickname": "硬核商业分析", "follower_count": 2_700_000, "rank_in_track": 2, "style_archetype": "干货型-拆解派"},
+    {"track": "财经商业", "platform": "douyin", "account_id": "demo_biz_3", "nickname": "30秒看懂财报", "follower_count": 1_900_000, "rank_in_track": 3, "style_archetype": "干货型-教学派"},
+]
+
+# 优惠券模板 · 5 种场景
+COUPONS: list[dict] = [
+    {
+        "code": "NEW70OFF",
+        "name": "新用户 7 折券",
+        "discount_type": "percent",
+        "discount_value": 30,  # 减 30%
+        "min_spend_cny": 1,
+        "applicable_skus": "pro_monthly,max_monthly",
+        "max_uses": 1000,
+        "description": "新注册用户首次订阅 PRO 或 MAX 享 7 折",
+    },
+    {
+        "code": "PRO49FIRST",
+        "name": "PRO 首月 49 元",
+        "discount_type": "amount",
+        "discount_value": 50,  # 原价 99 - 50 = 49
+        "min_spend_cny": 99,
+        "applicable_skus": "pro_monthly",
+        "max_uses": 500,
+        "description": "PRO 月卡首月仅需 49 元",
+    },
+    {
+        "code": "MAX299FIRST",
+        "name": "MAX 首月 299 元",
+        "discount_type": "amount",
+        "discount_value": 200,  # 原价 499 - 200 = 299
+        "min_spend_cny": 499,
+        "applicable_skus": "max_monthly",
+        "max_uses": 300,
+        "description": "MAX 月卡首月仅需 299 元",
+    },
+    {
+        "code": "RENEWAL90OFF",
+        "name": "续费 9 折券",
+        "discount_type": "percent",
+        "discount_value": 10,  # 减 10%
+        "min_spend_cny": 99,
+        "applicable_skus": "pro_monthly,max_monthly,pro_yearly,max_yearly",
+        "max_uses": 2000,
+        "description": "老用户续费任意月卡/年卡享 9 折",
+    },
+    {
+        "code": "SHAREOFFICIAL",
+        "name": "分享官专属券",
+        "discount_type": "percent",
+        "discount_value": 20,  # 减 20%
+        "min_spend_cny": 1,
+        "applicable_skus": "pro_monthly,max_monthly,single_ct,single_hook,single_persona,single_bps",
+        "max_uses": 100,
+        "description": "分享官专属 · 邀请好友注册后获得 · 全品类 8 折",
+    },
 ]
 
 
@@ -127,6 +217,29 @@ async def main() -> None:
                 continue
             db.add(Benchmark(**b))
         print(f"✓ 头部对标库: {len(BENCHMARKS)} 名")
+
+        # 优惠券模板
+        from datetime import datetime, timezone, timedelta
+
+        coupon_count = 0
+        for c in COUPONS:
+            res = await db.execute(select(Coupon).where(Coupon.code == c["code"]))
+            if res.scalar_one_or_none():
+                continue
+            db.add(Coupon(
+                code=c["code"],
+                name=c["name"],
+                discount_type=c["discount_type"],
+                discount_value=c["discount_value"],
+                min_spend_cny=c.get("min_spend_cny", 0),
+                applicable_skus=c.get("applicable_skus"),
+                max_uses=c.get("max_uses", 1),
+                valid_from=datetime.now(timezone.utc),
+                valid_to=datetime.now(timezone.utc) + timedelta(days=365),
+                is_active=True,
+            ))
+            coupon_count += 1
+        print(f"✓ 优惠券模板: {coupon_count} 张")
 
         # 管理员账号
         res = await db.execute(select(User).where(User.phone == "13800138000"))

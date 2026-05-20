@@ -1,0 +1,101 @@
+/* 视频 CT 文档站 · 星际深空风 */
+/* 覆盖 VitePress 默认变量，匹配 apps/h5 的设计令牌 */
+
+:root {
+  /* 背景层次 */
+  --vp-c-bg: #0a0e1a;
+  --vp-c-bg-alt: #0a0e1a;
+  --vp-c-bg-elv: #111827;
+  --vp-c-bg-soft: #111827;
+
+  /* 文字 */
+  --vp-c-text-1: #e5e7eb;
+  --vp-c-text-2: #9ca3af;
+  --vp-c-text-3: #6b7280;
+
+  /* 品牌色 — 琥珀 */
+  --vp-c-brand-1: #fbbf24;
+  --vp-c-brand-2: #f59e0b;
+  --vp-c-brand-3: #d97706;
+  --vp-c-brand-soft: rgba(245, 158, 11, 0.15);
+
+  /* 功能色 */
+  --vp-c-tip-1: #38bdf8;
+  --vp-c-tip-2: #0ea5e9;
+  --vp-c-tip-3: #0284c7;
+  --vp-c-tip-soft: rgba(56, 189, 248, 0.15);
+
+  --vp-c-success-1: #10b981;
+  --vp-c-success-2: #059669;
+  --vp-c-success-3: #047857;
+  --vp-c-success-soft: rgba(16, 185, 129, 0.15);
+
+  --vp-c-warning-1: #f59e0b;
+  --vp-c-warning-2: #d97706;
+  --vp-c-warning-3: #b45309;
+  --vp-c-warning-soft: rgba(245, 158, 11, 0.15);
+
+  --vp-c-danger-1: #ef4444;
+  --vp-c-danger-2: #dc2626;
+  --vp-c-danger-3: #b91c1c;
+  --vp-c-danger-soft: rgba(239, 68, 68, 0.15);
+
+  /* 边框 */
+  --vp-c-border: rgba(255, 255, 255, 0.08);
+  --vp-c-divider: rgba(255, 255, 255, 0.08);
+  --vp-c-gutter: rgba(255, 255, 255, 0.04);
+
+  /* 代码块 */
+  --vp-code-block-bg: #111827;
+  --vp-code-line-height: 1.7;
+  --vp-code-font-size: 0.875em;
+}
+
+/* 侧边栏连接点亮 */
+.VPSidebarItem.is-active > .item > .link > .text {
+  color: var(--vp-c-brand-1);
+}
+
+/* 自定义容器样式 */
+.custom-block.tip {
+  border-color: var(--vp-c-tip-1);
+}
+.custom-block.warning {
+  border-color: var(--vp-c-warning-1);
+}
+.custom-block.danger {
+  border-color: var(--vp-c-danger-1);
+}
+
+/* 首页 Hero 颜色重写 */
+.VPHero .name {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.VPHero .text {
+  color: var(--vp-c-text-2);
+}
+
+/* 表格 */
+.vp-doc table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.vp-doc th {
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 1px solid var(--vp-c-border);
+  padding: 8px 16px;
+}
+
+.vp-doc tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}

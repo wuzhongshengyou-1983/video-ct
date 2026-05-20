@@ -11,8 +11,11 @@ from loguru import logger
 
 from app import __version__
 from app.api import api_router
+from app.api.ws import router as ws_router
 from app.config import settings
 from app.core.exceptions import BizException
+from app.core.middleware import ExceptionMiddleware
+from app.core.rate_limit import RateLimitMiddleware
 from app.database import Base, engine
 
 
@@ -55,7 +58,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 速率限制中间件（基于 user_id 的每分钟限流）
+app.add_middleware(
+    RateLimitMiddleware,
+    rate=settings.RATE_LIMIT_PER_MINUTE,
+    exclude_paths=["/healthz", "/readyz", "/docs", "/openapi.json", "/redoc"],
+    redis_url=settings.REDIS_URL if settings.REDIS_URL else None,
+)
+
+# 全局异常处理中间件（捕获未处理异常，返回标准 JSON）
+app.add_middleware(ExceptionMiddleware)
+
 app.include_router(api_router)
+app.include_router(ws_router)
 
 
 @app.exception_handler(BizException)

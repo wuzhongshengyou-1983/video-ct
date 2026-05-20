@@ -29,9 +29,11 @@ http.interceptors.response.use(
         location.href = `/login?redirect=${encodeURIComponent(location.pathname)}`
       }
     } else if (status === 429) {
-      Toast.fail('额度已用完')
+      Toast.fail('本月配额已用完，升级 PRO 解锁')
     } else if (status === 402) {
       Toast.fail(msg)
+    } else if (status && status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
     } else if (status && status >= 400) {
       Toast.fail(msg)
     }

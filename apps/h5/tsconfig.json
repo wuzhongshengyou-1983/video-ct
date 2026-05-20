@@ -5,6 +5,12 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@video-ct/shared": [
+        "../../packages/shared/src"
+      ],
+      "@video-ct/shared/*": [
+        "../../packages/shared/src/*"
       ]
     },
     "types": [

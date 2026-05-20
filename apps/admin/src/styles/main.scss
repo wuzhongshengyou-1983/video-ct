@@ -1,0 +1,215 @@
+// ============================================
+// 视频 CT · 管理后台 — 深色主题
+// 背景 #0a0e1a / 主色 #f59e0b / 文字 #e5e7eb
+// ============================================
+
+// ---- CSS 变量 ----
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0d1117;
+  --bg-card: #111827;
+  --bg-hover: #1e2433;
+  --border-color: #1e2433;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --color-primary: #f59e0b;
+  --color-primary-hover: #d97706;
+  --color-primary-bg: rgba(245, 158, 11, 0.1);
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+}
+
+// ---- 全局重置 ----
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100%;
+}
+
+// ---- Ant Design Vue 深色主题覆盖 ----
+
+// Menu
+.ant-menu-dark {
+  background: var(--bg-secondary) !important;
+  .ant-menu-item {
+    color: var(--text-secondary) !important;
+    &:hover {
+      color: var(--color-primary) !important;
+    }
+    &.ant-menu-item-selected {
+      background: var(--color-primary-bg) !important;
+      color: var(--color-primary) !important;
+      border-right: 3px solid var(--color-primary);
+    }
+  }
+}
+
+// Table
+.ant-table {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+
+  .ant-table-thead > tr > th {
+    background: var(--bg-hover) !important;
+    color: var(--text-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  .ant-table-tbody > tr > td {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  .ant-table-tbody > tr:hover > td {
+    background: var(--bg-hover) !important;
+  }
+
+  .ant-pagination-item-active {
+    border-color: var(--color-primary) !important;
+    a {
+      color: var(--color-primary) !important;
+    }
+  }
+}
+
+// Card / Statistic
+.ant-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+
+  .ant-card-head {
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ant-card-body {
+    color: var(--text-primary) !important;
+  }
+}
+
+.ant-statistic-title {
+  color: var(--text-secondary) !important;
+}
+
+.ant-statistic-content {
+  color: var(--text-primary) !important;
+}
+
+// Button
+.ant-btn-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  &:hover {
+    background: var(--color-primary-hover) !important;
+    border-color: var(--color-primary-hover) !important;
+  }
+}
+
+.ant-btn-default {
+  background: transparent !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  &:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+  }
+}
+
+// Input / Select
+.ant-input, .ant-select-selector, .ant-picker {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  &:hover, &:focus, &.ant-input-focused {
+    border-color: var(--color-primary) !important;
+  }
+}
+
+.ant-select-dropdown, .ant-picker-dropdown {
+  .ant-select-item, .ant-picker-cell {
+    color: var(--text-primary) !important;
+  }
+}
+
+// Modal
+.ant-modal-content {
+  background: var(--bg-secondary) !important;
+  .ant-modal-header {
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  .ant-modal-title {
+    color: var(--text-primary) !important;
+  }
+  .ant-modal-close {
+    color: var(--text-secondary) !important;
+  }
+  .ant-modal-body {
+    color: var(--text-primary) !important;
+  }
+}
+
+// Form
+.ant-form-item-label > label {
+  color: var(--text-secondary) !important;
+}
+
+// Tag
+.ant-tag {
+  border-radius: 4px;
+}
+
+// Empty
+.ant-empty-description {
+  color: var(--text-muted) !important;
+}
+
+// Spin
+.ant-spin-dot-item {
+  background-color: var(--color-primary) !important;
+}
+
+// Page wrapper
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  h2 {
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+  }
+}
+
+// Stat cards row
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+// Search bar
+.search-bar {
+  margin-bottom: 16px;
+  max-width: 320px;
+}

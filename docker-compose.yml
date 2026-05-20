@@ -1,0 +1,133 @@
+# =============================================================================
+# Video CT · Docker Compose 开发环境
+# 启动: docker compose up -d
+# 停止: docker compose down
+# 重建: docker compose up -d --build
+# =============================================================================
+
+services:
+  # ===================== PostgreSQL 16 =====================
+  postgres:
+    image: postgres:16-alpine
+    container_name: video-ct-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-video_ct}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-video_ct_dev_pwd}
+      POSTGRES_DB: ${POSTGRES_DB:-video_ct}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/migrations/init_schema.sql:/docker-entrypoint-initdb.d/01-init-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-video_ct} -d ${POSTGRES_DB:-video_ct}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - video-ct-net
+
+  # ===================== Redis 7 =====================
+  redis:
+    image: redis:7-alpine
+    container_name: video-ct-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - video-ct-net
+
+  # ===================== MinIO (对象存储 mock) =====================
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: video-ct-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Web Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - video-ct-net
+
+  # ===================== 后端 API =====================
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: video-ct-api
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-video_ct}:${POSTGRES_PASSWORD:-video_ct_dev_pwd}@postgres:5432/${POSTGRES_DB:-video_ct}
+      - REDIS_URL=redis://redis:6379/0
+      - OSS_ENDPOINT=http://minio:9000
+      - OSS_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - OSS_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
+      - STORAGE_LOCAL_PATH=/app/storage/uploads
+    ports:
+      - "8000:8000"
+    volumes:
+      - api_storage:/app/storage
+      - ./services/api:/app:delegated
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - video-ct-net
+
+volumes:
+  pgdata:
+    driver: local
+    name: video_ct_pgdata
+  redisdata:
+    driver: local
+    name: video_ct_redisdata
+  minio_data:
+    driver: local
+    name: video_ct_minio_data
+  api_storage:
+    driver: local
+    name: video_ct_api_storage
+
+networks:
+  video-ct-net:
+    driver: bridge
+    name: video-ct-net

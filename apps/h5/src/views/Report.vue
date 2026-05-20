@@ -9,7 +9,7 @@
     <div v-if="report" class="report">
       <!-- 总评 -->
       <section class="vct-card glow score-card">
-        <div class="grade-badge">{{ report.grade }}</div>
+        <div class="grade-badge">{{ getGradeLabel(report.grade) }}</div>
         <div class="overall-num">{{ report.overall_score }}</div>
         <div class="overall-label">综合 CT 分</div>
         <div v-if="report.summary" class="summary">{{ report.summary }}</div>
@@ -72,7 +72,7 @@
       <section v-if="hasGap" class="vct-card">
         <div class="vct-section-title">📊 与赛道头部差距</div>
         <div v-for="(v, k) in report.benchmark_gap" :key="k" class="gap-item">
-          <div class="gap-label">{{ k.replace('_gap_pct', '').replace('_', '') }}</div>
+          <div class="gap-label">{{ (k as string).replace('_gap_pct', '').replace('_', '') }}</div>
           <div class="gap-bar">
             <div
               class="gap-fill"
@@ -111,6 +111,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Toast } from 'vant'
 import { diagnosisApi } from '@/api'
+import { getGradeLabel } from '@video-ct/shared'
 import RadarChart from '@/components/RadarChart.vue'
 
 const router = useRouter()
@@ -141,10 +142,14 @@ function prioCls(p: string) {
 
 async function submitFeedback() {
   try {
-    await diagnosisApi.feedback(id, rating.value, feedback.value)
+    await diagnosisApi.feedback(id, rating.value, feedback.value || undefined)
     Toast.success('谢谢反馈！AI 会更聪明')
   } catch (e: any) {
-    Toast.fail(e.message || '提交失败')
+    if (e.status && e.status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
+    } else {
+      Toast.fail(e.message || '提交失败')
+    }
   }
 }
 
@@ -156,14 +161,18 @@ onMounted(async () => {
   try {
     report.value = await diagnosisApi.report(id)
   } catch (e: any) {
-    Toast.fail(e.message || '报告未生成')
+    if (e.status && e.status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
+    } else {
+      Toast.fail(e.message || '报告未生成')
+    }
     router.replace(`/diagnose/${id}`)
   }
 })
 </script>
 
 <style lang="scss" scoped>
-.page { padding-bottom: 24px; }
+.page { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 .report > section { margin: 12px 16px; }
 .score-card {
   text-align: center; padding: 32px 16px;

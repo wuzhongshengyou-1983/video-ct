@@ -1,0 +1,14 @@
+{
+  "name": "@video-ct/docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "视频 CT · 开发者文档站（开放端）",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0"
+  }
+}

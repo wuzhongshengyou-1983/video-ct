@@ -10,7 +10,7 @@
           <div class="label">本月免费扫描</div>
         </div>
         <div class="stat-pill primary">
-          <div class="num">{{ tierLabel }}</div>
+          <div class="num">{{ getTierLabel(userStore.tier) }}</div>
           <div class="label">当前档位</div>
         </div>
       </div>
@@ -58,7 +58,7 @@
           <div class="rank">#{{ b.rank }}</div>
           <div class="info">
             <div class="name">{{ b.nickname }}</div>
-            <div class="meta">{{ b.platform }} · {{ formatNum(b.follower_count) }} 粉</div>
+            <div class="meta">{{ b.platform }} · {{ formatFollowerCount(b.follower_count) }} 粉</div>
             <div class="archetype">{{ b.style_archetype }}</div>
           </div>
         </div>
@@ -94,6 +94,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { benchmarkApi } from '@/api'
+import { formatFollowerCount, getTierLabel } from '@video-ct/shared'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -112,14 +113,6 @@ const agents = ref([
 
 const usedCount = computed(() => userStore.me?.monthly_free_scans_used ?? 0)
 const quota = computed(() => userStore.me?.monthly_free_scans_quota ?? 3)
-const tierLabel = computed(() => ({
-  free: '免费', pro: 'PRO', max: 'MAX',
-}[userStore.tier] || '免费'))
-
-function formatNum(n: number): string {
-  if (n >= 10000) return (n / 10000).toFixed(1) + 'w'
-  return String(n)
-}
 
 onMounted(async () => {
   try {
@@ -129,7 +122,7 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.home { padding: 16px; }
+.home { padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
 .hero {
   text-align: center;
   padding: 24px 0 16px;

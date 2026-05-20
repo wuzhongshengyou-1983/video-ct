@@ -68,6 +68,27 @@ storage/
 uploads/
 tmp/
 
+# ====================== Backups ======================
+backups/
+
+# ====================== Docker ======================
+# Docker volumes (local dev data)
+pgdata/
+redisdata/
+minio_data/
+api_storage/
+
+# ====================== Grafana ======================
+grafana-data/
+
+# ====================== Playwright E2E ======================
+playwright-report/
+test-results/
+tests/e2e/node_modules/
+
+# ====================== Husky ======================
+.husky/_/
+
 # ====================== Misc ======================
 .eslintcache
 .stylelintcache

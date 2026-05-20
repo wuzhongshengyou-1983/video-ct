@@ -1,0 +1,22 @@
+{
+  "name": "@video-ct/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "视频 CT 共享类型、常量、工具函数、设计令牌",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/api.ts",
+    "./constants": "./src/constants/business.ts",
+    "./utils": "./src/utils/format.ts",
+    "./tokens": "./src/tokens/design-tokens.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

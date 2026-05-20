@@ -21,6 +21,9 @@
           autosize
           type="textarea"
           rows="2"
+          :error="errors.video_url"
+          :error-message="errors.video_url"
+          @update:model-value="errors.video_url = ''"
         />
         <van-field
           v-model="form.track"
@@ -55,7 +58,7 @@
       <div class="tip">扫描通常需要 60-180 秒，期间可关闭页面</div>
     </div>
 
-    <van-popup v-model:show="trackPickerShow" position="bottom">
+    <van-popup v-model:show="trackPickerShow" position="bottom" :style="{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }">
       <van-picker
         :columns="tracks"
         @confirm="onTrackConfirm"
@@ -64,7 +67,7 @@
       />
     </van-popup>
 
-    <van-popup v-model:show="typePickerShow" position="bottom">
+    <van-popup v-model:show="typePickerShow" position="bottom" :style="{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }">
       <van-picker
         :columns="diagnosisTypes"
         @confirm="onTypeConfirm"
@@ -81,6 +84,7 @@ import { useRouter } from 'vue-router'
 import { Toast } from 'vant'
 import { diagnosisApi, benchmarkApi } from '@/api'
 import { useUserStore } from '@/stores/user'
+import { DIAGNOSIS_TYPES } from '@video-ct/shared'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -88,15 +92,18 @@ const userStore = useUserStore()
 const form = reactive({
   video_url: '',
   track: '通用',
-  diagnosis_type: 'ct_basic',
+  diagnosis_type: DIAGNOSIS_TYPES.CT_BASIC,
+})
+const errors = reactive({
+  video_url: '',
 })
 const loading = ref(false)
 const trackPickerShow = ref(false)
 const typePickerShow = ref(false)
 const tracks = ref<{ text: string; value: string }[]>([])
 const diagnosisTypes = [
-  { text: '基础 CT（6 维评分 + 修复建议）', value: 'ct_basic' },
-  { text: '完整 CT（含病灶时间戳定位）', value: 'ct_full' },
+  { text: '基础 CT（6 维评分 + 修复建议）', value: DIAGNOSIS_TYPES.CT_BASIC },
+  { text: '完整 CT（含病灶时间戳定位）', value: DIAGNOSIS_TYPES.CT_FULL },
 ]
 const dims = [
   { name: '表层观感', emoji: '👁' },
@@ -117,10 +124,13 @@ onMounted(async () => {
       { text: '通用', value: '通用' },
       ...ts.map((t: any) => ({ text: t.track, value: t.track })),
     ]
-  } catch { /* ignore */ }
+  } catch {
+    // tracks API 失败不阻塞页面使用，保留默认「通用」选项
+    tracks.value = [{ text: '通用', value: '通用' }]
+  }
 })
 
-function onTrackConfirm({ selectedValues, selectedOptions }: any) {
+function onTrackConfirm({ selectedValues }: any) {
   form.track = selectedValues[0]
   trackPickerShow.value = false
 }
@@ -129,11 +139,28 @@ function onTypeConfirm({ selectedValues }: any) {
   typePickerShow.value = false
 }
 
-async function submit() {
-  if (!form.video_url.trim() || form.video_url.length < 10) {
-    Toast.fail('请粘贴有效视频链接')
-    return
+const VIDEO_URL_PATTERN = /douyin\.com|kuaishou\.com|xiaohongshu\.com|bilibili\.com|weixin\.qq\.com/
+
+function validate(): boolean {
+  const url = form.video_url.trim()
+  if (!url) {
+    errors.video_url = '请粘贴视频链接'
+    return false
   }
+  if (url.length < 10) {
+    errors.video_url = '链接太短，请粘贴完整视频链接'
+    return false
+  }
+  if (!VIDEO_URL_PATTERN.test(url)) {
+    errors.video_url = '目前仅支持抖音/快手/小红书/B站/视频号的链接'
+    return false
+  }
+  return true
+}
+
+async function submit() {
+  if (!validate()) return
+
   loading.value = true
   try {
     const diag = await diagnosisApi.submit({
@@ -144,8 +171,15 @@ async function submit() {
     Toast.success('诊断已开始')
     router.replace(`/diagnose/${diag.id}`)
   } catch (e: any) {
-    if (e.status === 429) Toast.fail('本月配额已用完，升级 PRO 解锁')
-    else Toast.fail(e.message || '提交失败')
+    if (e.status === 402) {
+      Toast.fail('本月配额已用完，升级 PRO 解锁')
+    } else if (e.status === 429) {
+      Toast.fail('本月配额已用完，升级 PRO 解锁')
+    } else if (e.status && e.status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
+    } else {
+      Toast.fail(e.message || '提交失败')
+    }
   } finally {
     loading.value = false
   }
@@ -153,14 +187,14 @@ async function submit() {
 </script>
 
 <style lang="scss" scoped>
-.page { padding-bottom: 24px; }
+.page { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 .quota-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px; margin: 0 16px 12px;
   .quota-label { font-size: 11px; color: var(--vct-text-3); }
   .quota-num { font-size: 18px; font-weight: 600; color: var(--vct-primary); }
 }
-.form { margin: 0 16px; padding: 16px 0; }
+.form { margin: 0 16px; padding: 16px 0; scroll-margin-bottom: 40vh; }
 .dim-list { margin: 20px 16px; }
 .dim-title { font-size: 13px; color: var(--vct-text-2); margin-bottom: 12px; }
 .dim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
@@ -170,6 +204,6 @@ async function submit() {
     .emoji { font-size: 18px; display: block; margin-bottom: 4px; }
   }
 }
-.submit-btn { margin: 24px 16px 8px; height: 50px; font-size: 17px; }
+.submit-btn { margin: 24px 16px 8px; min-height: 50px; font-size: 17px; }
 .tip { text-align: center; font-size: 11px; color: var(--vct-text-3); margin-bottom: 8px; }
 </style>

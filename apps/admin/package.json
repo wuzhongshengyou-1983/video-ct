@@ -1,0 +1,35 @@
+{
+  "name": "@video-ct/admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "视频 CT · 管理后台",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.ts,.tsx",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "pinia": "^2.3.0",
+    "ant-design-vue": "^4.2.6",
+    "@ant-design/icons-vue": "^7.0.1",
+    "axios": "^1.7.9",
+    "echarts": "^5.5.1",
+    "vue-echarts": "^7.0.3",
+    "dayjs": "^1.11.13",
+    "@video-ct/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3",
+    "vue-tsc": "^2.1.10",
+    "unplugin-vue-components": "^28.0.0",
+    "unplugin-auto-import": "^0.19.0",
+    "sass-embedded": "^1.83.0"
+  }
+}

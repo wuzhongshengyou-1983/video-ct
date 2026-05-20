@@ -14,8 +14,12 @@
 
     <!-- 历史诊断 -->
     <div class="vct-section-title">📜 历史诊断（{{ list.length }}）</div>
-    <div v-if="list.length === 0" class="empty">
+    <div v-if="list.length === 0 && !networkError" class="empty">
       <van-empty description="还没有诊断记录，去发起第一次吧" />
+    </div>
+    <div v-if="networkError" class="empty">
+      <van-empty image="network" description="网络异常，请检查网络后重试" />
+      <van-button type="primary" block size="small" @click="fetchList">重试</van-button>
     </div>
     <div v-else class="diag-list">
       <div
@@ -43,10 +47,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { diagnosisApi } from '@/api'
-import dayjs from 'dayjs'
+import { formatTime } from '@video-ct/shared'
 
 const router = useRouter()
 const list = ref<any[]>([])
+const networkError = ref(false)
 
 const PLATFORM_LABELS: Record<string, string> = {
   douyin: '抖音', kuaishou: '快手', shipinhao: '视频号', xiaohongshu: '小红书', bilibili: 'B站', unknown: '其他',
@@ -57,22 +62,28 @@ const STATUS_LABELS: Record<string, string> = {
 
 function platformLabel(p: string) { return PLATFORM_LABELS[p] || '其他' }
 function statusLabel(s: string) { return STATUS_LABELS[s] || s }
-function formatTime(t: string) { return dayjs(t).format('MM-DD HH:mm') }
 
 function goReport(d: any) {
   if (d.status === 'done') router.push(`/report/${d.id}`)
   else router.push(`/diagnose/${d.id}`)
 }
 
-onMounted(async () => {
+async function fetchList() {
+  networkError.value = false
   try {
-    list.value = await diagnosisApi.list()
-  } catch { /* ignore */ }
-})
+    const data = await diagnosisApi.list()
+    list.value = data || []
+  } catch (e: any) {
+    if (!navigator.onLine) networkError.value = true
+    else list.value = []
+  }
+}
+
+onMounted(fetchList)
 </script>
 
 <style lang="scss" scoped>
-.page { padding: 0 16px 24px; }
+.page { padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
 .cta {
   display: flex; align-items: center; gap: 14px; padding: 16px;
   background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(56,189,248,0.08));

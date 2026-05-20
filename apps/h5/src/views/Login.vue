@@ -14,6 +14,9 @@
         placeholder="请输入手机号"
         maxlength="11"
         type="tel"
+        :error="phoneError"
+        :error-message="phoneError"
+        @update:model-value="phoneError = ''"
       />
       <div class="vct-divider" />
       <van-field
@@ -22,6 +25,9 @@
         placeholder="6 位验证码"
         maxlength="6"
         type="number"
+        :error="codeError"
+        :error-message="codeError"
+        @update:model-value="codeError = ''"
       >
         <template #button>
           <van-button size="small" type="primary" :disabled="cooldown > 0" @click="sendOtp">
@@ -58,6 +64,8 @@ const userStore = useUserStore()
 
 const phone = ref('')
 const code = ref('')
+const phoneError = ref('')
+const codeError = ref('')
 const cooldown = ref(0)
 const loading = ref(false)
 const referrer = ref<string | null>(null)
@@ -71,7 +79,7 @@ onMounted(() => {
 
 async function sendOtp() {
   if (!/^1[3-9]\d{9}$/.test(phone.value)) {
-    Toast.fail('手机号格式错误')
+    phoneError.value = '请输入正确的手机号'
     return
   }
   try {
@@ -83,19 +91,28 @@ async function sendOtp() {
       if (cooldown.value <= 0) clearInterval(timer)
     }, 1000)
   } catch (e: any) {
-    Toast.fail(e.message || '发送失败')
+    if (e.status === 429) {
+      Toast.fail('验证码发送太频繁，请稍后重试')
+    } else if (e.status && e.status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
+    } else {
+      Toast.fail(e.message || '发送失败')
+    }
   }
 }
 
 async function login() {
+  let valid = true
   if (!/^1[3-9]\d{9}$/.test(phone.value)) {
-    Toast.fail('手机号格式错误')
-    return
+    phoneError.value = '请输入正确的手机号'
+    valid = false
   }
   if (!/^\d{4,6}$/.test(code.value)) {
-    Toast.fail('请输入验证码')
-    return
+    codeError.value = '请输入验证码'
+    valid = false
   }
+  if (!valid) return
+
   loading.value = true
   try {
     const r = await authApi.verifyOtp(phone.value, code.value, referrer.value || undefined)
@@ -106,7 +123,13 @@ async function login() {
     const redirect = (route.query.redirect as string) || '/home'
     router.replace(redirect)
   } catch (e: any) {
-    Toast.fail(e.message || '登录失败')
+    if (e.status === 429) {
+      Toast.fail('验证码验证太频繁，请稍后重试')
+    } else if (e.status && e.status >= 500) {
+      Toast.fail('服务繁忙，请稍后重试')
+    } else {
+      Toast.fail(e.message || '登录失败')
+    }
   } finally {
     loading.value = false
   }
@@ -114,21 +137,21 @@ async function login() {
 </script>
 
 <style lang="scss" scoped>
-.login { min-height: 100vh; padding: 0 16px 24px; }
+.login { min-height: 100vh; padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
 .hero { text-align: center; padding: 24px 0 32px;
   .logo { font-size: 36px; font-weight: 800;
     span { color: var(--vct-primary); }
   }
   .tag { color: var(--vct-text-2); font-size: 13px; margin-top: 4px; }
 }
-.form { padding: 24px 16px; }
+.form { padding: 24px 16px; scroll-margin-bottom: 40vh; }
 .referrer-tip {
   background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3);
   padding: 10px 12px; border-radius: 8px; font-size: 12px;
   color: var(--vct-accent); margin: 16px 0 4px;
   strong { color: var(--vct-primary); }
 }
-.login-btn { margin-top: 24px; height: 48px; font-size: 16px; }
+.login-btn { margin-top: 24px; min-height: 48px; font-size: 16px; }
 .dev-tip {
   margin-top: 16px; text-align: center; font-size: 11px; color: var(--vct-text-3);
   code { background: var(--vct-surface); padding: 2px 6px; border-radius: 4px; color: var(--vct-primary); }
