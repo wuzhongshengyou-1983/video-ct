@@ -95,10 +95,21 @@ async def create_diagnosis(
 
 
 async def fetch_video_meta(video_url: str, platform: str) -> dict:
-    """抓取视频元数据 · 优先真实 API，不可用时降级 mock."""
+    """抓取视频元数据 · TikHub 真实 API 优先 → AI 估算 → mock 兜底."""
     logger.info(f"[fetch_video_meta] url={video_url} platform={platform}")
 
-    # 尝试通过硅基流动 API 获取视频信息（如果提供了 API key）
+    # ① TikHub 真实数据（优先）
+    try:
+        from app.services.tikhub_service import fetch_video_meta as tikhub_fetch
+
+        tikhub_meta = await tikhub_fetch(video_url)
+        if tikhub_meta.get("source") != "fallback_mock" and not tikhub_meta.get("error"):
+            logger.info(f"[fetch_video_meta] ✅ TikHub 真实数据: {tikhub_meta.get('title', 'N/A')[:50]}")
+            return tikhub_meta
+    except Exception as exc:
+        logger.warning(f"[fetch_video_meta] TikHub 调用失败: {exc}")
+
+    # ② AI 估算（兜底）
     if settings.SILICONFLOW_API_KEY:
         try:
             from app.services.llm_router import llm_router
@@ -264,13 +275,25 @@ async def run_full_pipeline(
                 # 短暂延迟后重试
                 await asyncio.sleep(2)
 
-            # ---- 步骤 1：抓元数据 ----
+            # ---- 步骤 1：抓元数据（TikHub 真实数据优先）----
             t1 = time.monotonic()
             meta = await fetch_video_meta(diag.video_url, diag.video_platform or "unknown")
             diag.video_meta = meta
-            diag.progress_pct = 30
+            diag.progress_pct = 25
             await db.commit()
             await _log_step("Step 1 fetch_video_meta", t1)
+
+            # ---- 步骤 1.5：抓评论（TikHub 真实评论 → 人设分析用）----
+            t15 = time.monotonic()
+            comments_data = {"comments": [], "total": 0}
+            try:
+                from app.services.tikhub_service import fetch_video_comments as tikhub_comments
+                comments_data = await tikhub_comments(diag.video_url)
+                logger.info(f"[Pipeline] 评论拉取: {len(comments_data.get('comments', []))} 条")
+            except Exception as exc:
+                logger.warning(f"[Pipeline] 评论拉取失败（非致命）: {exc}")
+            diag.progress_pct = 35
+            await _log_step("Step 1.5 fetch_comments", t15)
 
             # ---- 步骤 2：OCR + ASR ----
             t2 = time.monotonic()

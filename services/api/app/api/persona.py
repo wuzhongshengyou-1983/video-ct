@@ -21,10 +21,22 @@ async def scan(payload: PersonaScanRequest, db: DbSession, user: CurrentUser):
     prof = prof_res.scalar_one_or_none()
     tier = await get_user_tier(db, user.id)
 
+    # 如果有视频链接，尝试从 TikHub 拉取真实评论
+    comments_text = ""
+    if payload.sample_video_urls:
+        try:
+            from app.services.tikhub_service import fetch_video_comments as tikhub_comments
+            for url in payload.sample_video_urls[:3]:
+                comments_data = await tikhub_comments(url)
+                for c in comments_data.get("comments", [])[:20]:
+                    comments_text += c.get("text", "") + " | "
+        except Exception:
+            pass  # 评论拉取失败不影响主流程
+
     agent = PersonaScoutAgent()
     result = await agent.run(
         videos_summary=" ; ".join(payload.sample_video_urls or []),
-        comments_summary="",
+        comments_summary=comments_text or payload.description or "",
         user_description=payload.description or (prof.bio if prof else ""),
         track=prof.track if prof and prof.track else "通用",
         tier=tier,

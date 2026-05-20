@@ -73,6 +73,14 @@ class Settings(BaseSettings):
     DOUYIN_CLIENT_KEY: str = ""
     DOUYIN_CLIENT_SECRET: str = ""
 
+    # TikHub 视频数据采集
+    TIKHUB_API_KEY: str = ""
+    TIKHUB_BASE_URL: str = "https://api.tikhub.io"
+
+    # AnySearch 跨平台搜索
+    ANYSEARCH_API_KEY: str = ""
+    ANYSEARCH_BASE_URL: str = "https://api.anysearch.com"
+
     # 短信（mock 占位）
     ALIYUN_SMS_ACCESS_KEY: str = ""
     ALIYUN_SMS_ACCESS_SECRET: str = ""

@@ -27,6 +27,19 @@ from app.services.llm_router import llm_router, LLMRouter, LLMResponse
 from app.services.ocr_asr import extract_text_from_image, transcribe_audio, extract_video_info
 from app.services.storage import upload_file, get_file_url, delete_file, file_exists, generate_upload_key
 from app.services.task_queue import TaskQueue
+from app.services.tikhub_service import (
+    TikHubClient,
+    get_tikhub,
+    fetch_video_meta as tikhub_fetch_video_meta,
+    fetch_video_comments as tikhub_fetch_comments,
+    fetch_author_info as tikhub_fetch_author,
+)
+from app.services.anysearch_service import (
+    AnySearchClient,
+    get_anysearch,
+    search_competitors,
+    fetch_industry_trends,
+)
 
 __all__ = [
     # auth
@@ -67,4 +80,15 @@ __all__ = [
     "file_exists",
     "generate_upload_key",
     "TaskQueue",
+    # tikhub
+    "TikHubClient",
+    "get_tikhub",
+    "tikhub_fetch_video_meta",
+    "tikhub_fetch_comments",
+    "tikhub_fetch_author",
+    # anysearch
+    "AnySearchClient",
+    "get_anysearch",
+    "search_competitors",
+    "fetch_industry_trends",
 ]
