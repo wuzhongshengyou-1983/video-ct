@@ -1,0 +1,73 @@
+// 全局样式 · 星际深空风（参考用户偏好「深空黑底 + 琥珀暖光 + 粒子科技感」）
+
+:root {
+  --vct-bg: #0a0e1a;
+  --vct-bg-2: #111827;
+  --vct-surface: rgba(255,255,255,0.04);
+  --vct-surface-hover: rgba(255,255,255,0.08);
+  --vct-text: #e5e7eb;
+  --vct-text-2: #9ca3af;
+  --vct-text-3: #6b7280;
+  --vct-primary: #f59e0b;       // 琥珀
+  --vct-primary-hover: #fbbf24;
+  --vct-accent: #38bdf8;
+  --vct-success: #10b981;
+  --vct-warning: #f59e0b;
+  --vct-danger: #ef4444;
+  --vct-border: rgba(255,255,255,0.08);
+  --vct-radius: 12px;
+  --vct-radius-lg: 16px;
+  --vct-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --vct-glow: 0 0 32px rgba(245,158,11,0.25);
+}
+
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', PingFang SC, Microsoft YaHei, sans-serif;
+  background: var(--vct-bg);
+  color: var(--vct-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: inherit; text-decoration: none; }
+
+// Vant 主题覆盖
+:root:root {
+  --van-primary-color: var(--vct-primary);
+  --van-background: var(--vct-bg);
+  --van-background-2: var(--vct-bg-2);
+  --van-text-color: var(--vct-text);
+  --van-text-color-2: var(--vct-text-2);
+  --van-border-color: var(--vct-border);
+  --van-cell-background: transparent;
+  --van-cell-value-color: var(--vct-text-2);
+  --van-nav-bar-background: transparent;
+  --van-nav-bar-title-text-color: var(--vct-text);
+  --van-button-primary-background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  --van-button-primary-border-color: transparent;
+}
+
+.vct-card {
+  background: var(--vct-surface);
+  border: 1px solid var(--vct-border);
+  border-radius: var(--vct-radius-lg);
+  padding: 16px;
+  backdrop-filter: blur(12px);
+}
+.vct-card.glow { box-shadow: var(--vct-glow); }
+.vct-section-title {
+  font-size: 18px; font-weight: 600; margin: 24px 0 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.vct-tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 999px; font-size: 11px;
+  background: rgba(245,158,11,0.15); color: var(--vct-primary);
+}
+.vct-stat-num { font-size: 28px; font-weight: 700; color: var(--vct-primary); }
+.vct-divider { height: 1px; background: var(--vct-border); margin: 16px 0; }
+
+// Toast/Dialog 深色补丁
+.van-toast { background: rgba(17,24,39,0.95) !important; color: #fff !important; }
+.van-dialog { background: var(--vct-bg-2) !important; color: var(--vct-text) !important; }
