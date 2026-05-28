@@ -66,14 +66,12 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install WeasyPrint system deps
-        run: sudo apt-get install -y libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          cache-dependency-path: services/api/requirements.txt
-      - run: pip install -r requirements.txt
+          cache-dependency-path: services/api/requirements-alembic.txt
+      - run: pip install -r requirements-alembic.txt
       - name: Run all migrations
         env:
           DATABASE_URL: postgresql+asyncpg://video_ct:video_ct_test@localhost:5432/video_ct_test
