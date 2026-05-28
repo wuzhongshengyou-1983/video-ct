@@ -656,6 +656,263 @@ phase-gate 在运行时守卫数据门槛功能
 
 ---
 
+## Task 5: 多窗口版本统计与合并
+
+> 多个 Claude Code 窗口并行推进功能时，如何保证版本汇总不混乱。
+
+**核心机制：** 每个窗口在自己的 `feat-MMDD-*` 分支工作，所有分支 PR 合并到 `main`，release-please 在 `main` 上自动汇总所有 commits 生成唯一一个 release PR——不存在多窗口"抢版本号"的问题。
+
+**Files:**
+- Modify: `.husky/commit-msg`（追加 session 元数据写入）
+- Create: `scripts/list-window-commits.sh`（查询各窗口贡献）
+
+### Steps
+
+- [ ] **Step 1: 在 commit-msg hook 中写入窗口追踪标签**
+
+每个窗口在 commit body 里自动打 `win:` 标签，供后续过滤。修改 `.husky/commit-msg`：
+
+```sh
+#!/usr/bin/env sh
+# 1. commitlint 校验
+npx --no -- commitlint --edit "$1"
+
+# 2. 如果 commit 已有 win: 标签就跳过（rebase/amend 场景）
+if grep -q "^win:" "$1"; then exit 0; fi
+
+# 3. 把窗口标识写入 commit body（从环境变量或 hostname 取）
+WIN_ID="${VIDEO_CT_WINDOW:-$(hostname)-$$}"
+printf "\nwin: %s\n" "$WIN_ID" >> "$1"
+```
+
+> 使用方式：启动窗口时 `export VIDEO_CT_WINDOW=win-ops-brain`，每条 commit 自动带上 `win: win-ops-brain`。
+
+- [ ] **Step 2: 写 scripts/list-window-commits.sh**
+
+```bash
+#!/usr/bin/env bash
+# 查看各窗口自上次 tag 以来的贡献
+# 用法: bash scripts/list-window-commits.sh [win-name]
+SINCE_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+RANGE="${SINCE_TAG:+${SINCE_TAG}..}HEAD"
+
+if [[ -n "${1:-}" ]]; then
+  echo "=== 窗口 $1 的 commits ==="
+  git log "$RANGE" --pretty=format:"%h %s" --grep="win: $1"
+else
+  echo "=== 所有窗口贡献统计 ==="
+  git log "$RANGE" --pretty=format:"%b" | grep "^win:" | sort | uniq -c | sort -rn
+fi
+```
+
+- [ ] **Step 3: 多窗口合并冲突处理规则**
+
+当两个窗口的 PR 同时存在时，按以下顺序合并：
+
+```
+优先级顺序（高到低）：
+1. hotfix-* 分支    → 立即合并，不等其他窗口
+2. fix-* 分支       → 优先于 feat，减少冲突面
+3. feat-* 分支      → 按创建时间先后合并
+4. chore-* 分支     → 最后合并
+
+冲突文件处理：
+- pnpm-lock.yaml    → 后合并的窗口重跑 pnpm install
+- CHANGELOG.md      → release-please 自动处理，不要手动编辑
+- migrations/       → 按时间戳命名，几乎不冲突；有冲突时检查 revision 链
+```
+
+- [ ] **Step 4: commit**
+
+```bash
+chmod +x scripts/list-window-commits.sh
+git add .husky/commit-msg scripts/list-window-commits.sh
+git commit -m "chore: add multi-window commit tracking and merge guide"
+```
+
+---
+
+## 补充规范一：版本命名特性
+
+一个好的版本名需要同时满足四个维度：
+
+| 维度 | 格式 | 例子 | 谁生成 |
+|------|------|------|-------|
+| **机器可读** | `vX.Y.Z`（纯 semver） | `v3.2.0` | release-please 自动 |
+| **人类可读** | `vX.Y · 中文代号` | `v3.2 · 数据飞轮版` | 版本文档 `<title>` 中定义 |
+| **状态标识** | emoji 前缀 | `🚧 规划中` | 版本索引自动维护 |
+| **Phase 关联** | `Phase N` | `Phase 1 解锁` | 版本文档 meta 区声明 |
+
+**版本状态生命周期（emoji 规范）：**
+
+```
+🚧 规划中   → 分支已开，文档模板已创建，代码未开始
+🟡 开发中   → 至少有一个 Sprint 的 feat: commit 合入
+🟢 当前版本 → 已 tag + 部署生产，正在运行
+✅ 已归档   → 被更新版本取代，移入 历史版本归档/
+⚠️ 已弃用   → 曾部署但发现问题，主动标记不推荐使用
+❌ 已删除   → 从未部署、内容已合并、分支已清理
+```
+
+**代号命名原则：**
+- 用产品交付物命名，不用技术术语（`数据飞轮版` 而非 `postgres-schema-v2`）
+- 2-6 个汉字，一眼看懂这版交付了什么
+- 历史代号不复用
+
+**参考代号序列（v3.x）：**
+
+| 版本 | 代号 | 核心交付 |
+|------|------|---------|
+| v3.1 | 统一实施版 | ops-brain + AI 执行引擎 |
+| v3.2 | 数据飞轮版 | 账号健康分 + MediaCrawler |
+| v3.3 | 智能推荐版 | BPR + DuckDB |
+| v4.0 | 开源生态版 | 前端开源 + API 开放 |
+
+---
+
+## 补充规范二：版本隔离（防串台）
+
+**串台的本质** = 某窗口把属于 vX.2 的功能写进了 vX.1 的分支，或两窗口同时修改同一文件造成逻辑混淆。
+
+### 六条隔离规则
+
+**规则 1 — 分支隔离（最基础）**
+
+```
+每个版本的功能开发只在对应分支进行：
+feat-MMDD-{feature}  属于下一个 minor 版本
+fix-MMDD-{bug}       属于当前 patch 版本
+hotfix-MMDD-{issue}  紧急，直接目标当前生产版本
+
+禁止：在 fix-* 分支里混入 feat: 提交
+检测：commitlint + Danger JS（PR 时检查分支名与 commit type 是否匹配）
+```
+
+**规则 2 — 功能旗标隔离（跨版本预开发）**
+
+```python
+# 如果要提前开发 v3.3 功能但不立即上线：
+# 在代码里加 Feature Flag，默认关闭
+from app.core.phase_gate import Phase, require_phase
+
+@router.get("/recommendations")
+async def get_recommendations(db: AsyncSession = Depends(get_db)):
+    # Phase 2 才开启，Phase 1 时此接口返回 503
+    if not await require_phase(db, Phase.TWO):
+        raise HTTPException(503, detail="PHASE_NOT_READY")
+    ...
+```
+
+**规则 3 — 数据库迁移隔离**
+
+```
+迁移文件命名: YYYYMMDD_HHMM_{version}_{description}.py
+例: 20260601_1400_v32_add_account_health.py
+
+规则:
+- 同一版本的迁移文件前缀相同（v32_*）
+- 不同版本的迁移不能有依赖关系（v33 的迁移不能 depends_on v32 未 merge 的迁移）
+- 如有跨版本依赖 → 等依赖版本 release 后再开 PR
+```
+
+**规则 4 — 文档归属隔离**
+
+```
+每个窗口只允许修改当前工作版本的主文档：
+  Window A 做 v3.2 → 只写 v3.2-master.html
+  Window B 做 v3.3 → 只写 v3.3-master.html（提前创建模板即可）
+  
+禁止：任何窗口修改已归档版本的 master.html
+检测：Danger JS 在 PR 时检查 docs/02-方案/历史版本归档/ 下是否有变动
+```
+
+**规则 5 — API 双轨隔离**
+
+```
+新 minor 版本新增端点时，不替换旧端点：
+  v3.1 的 /api/heal 继续存活
+  v3.2 新增 /api/ai/execute（不删旧的）
+  
+旧端点下线时机：
+  - 在 CHANGELOG 标记 @deprecated
+  - 经过 1 个 minor 版本（约 1-2 个 Sprint）
+  - 确认 0 个外部调用后，在下下个 minor 版本里删除
+  
+例: /api/heal 在 v3.2 标 deprecated → v3.4 删除
+```
+
+**规则 6 — release PR 唯一性**
+
+```
+release-please 保证在任意时刻 main 分支上只存在一个 release PR。
+所有窗口的功能 PR 合入 main 后都会被同一个 release PR 收录。
+
+如果两个窗口同时想"发版"：
+  → 只能 merge 同一个 release PR，没有竞争
+  → release PR 的版本号由 release-please 根据 commits 自动决定
+  → 窗口无法也不需要手动指定版本号
+```
+
+---
+
+## 补充规范三：版本删除标准
+
+**首要原则：git tag 永不删除。** 删除的是分支、文档草稿、废弃的变更文件。
+
+### 删除决策树
+
+```
+这个版本/分支/文档值得删除吗？
+
+├─ 是 git tag（vX.Y.Z）？
+│    → 永不删除（生产记录，法律意义）
+│
+├─ 是 feature/fix 分支？
+│    ├─ 已 merge 到 main？ → 删除（GitHub 设置自动删除）
+│    └─ 未 merge，超过 30 天无 commit？ → 删除（僵尸分支）
+│
+├─ 是版本主文档（vX.Y-master.html）？
+│    ├─ 曾部署到生产？ → 只归档，永不删除
+│    └─ 从未部署，内容已 100% 被新版本吸收？ → 可删除
+│
+├─ 是 .changeset/*.md 变更文件？
+│    ├─ 已被 release-please 消费（版本已发布）？ → 已自动删除
+│    └─ 对应功能被放弃？ → 手动删除
+│
+└─ 是草稿/实验性分支（draft-*、exp-*）？
+     ├─ 有 PR 记录或文档记录其结论？ → 可删除分支（结论留在 PR/doc）
+     └─ 无任何记录？ → 先写一行注释到相关文档，再删
+```
+
+### 具体场景判断
+
+| 场景 | 操作 | 原因 |
+|------|------|------|
+| Feature 分支 merge 后 | 立即删除分支 | PR 记录已保留历史 |
+| Hotfix 分支 merge 后 | 立即删除分支 | 同上 |
+| 版本发布后旧版文档 | 归档（自动） | scaffold 脚本处理 |
+| 版本规划中途被取消 | 文档标 ❌ + 分支删除 | 保留取消记录 |
+| 有生产 bug 的旧版本 | 文档标 ⚠️，不删除 | 需要保留 debug 参考 |
+| 早于 v2.0 的文档 | 可彻底删除 | v3.1-master 已继承全部 |
+| 未发布的 draft 版本文档 | 判断内容是否已在新版中 | 若 100% 被包含则删 |
+
+### 定期清理节奏
+
+```bash
+# 建议每次 minor 版本发布后运行：
+# 1. 清理已合并分支
+git branch --merged main | grep -v "main\|develop" | xargs git branch -d
+
+# 2. 清理远端已合并分支
+git fetch --prune
+
+# 3. 列出 30 天无 commit 的未合并分支（人工判断）
+git for-each-ref --format='%(refname:short) %(committerdate:relative)' refs/heads \
+  | awk '$2 ~ /months|year/ {print "⚠️ 僵尸分支: " $0}'
+```
+
+---
+
 ## Self-Review
 
 **Spec coverage:**
@@ -664,6 +921,10 @@ phase-gate 在运行时守卫数据门槛功能
 - ✅ 自动化流水线 — Task 2 release-please
 - ✅ 数据门控 — Task 3 phase_gate.py
 - ✅ 文档自动归档 + 新版模板 — Task 4 scaffold 脚本
+- ✅ 多窗口统计与合并 — Task 5 + win: 标签 + list-window-commits.sh
+- ✅ 版本命名特性 — 补充规范一（semver + 代号 + 状态 emoji + Phase）
+- ✅ 防串台六条规则 — 补充规范二（分支/功能旗标/迁移/文档/API/release PR）
+- ✅ 版本删除标准 — 补充规范三（决策树 + 场景表 + 清理脚本）
 
 **Placeholder scan:** 无 TBD/TODO/placeholder
 
