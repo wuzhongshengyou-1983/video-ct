@@ -21,12 +21,17 @@ class PasswordLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str = ""
     token_type: str = "bearer"
     expires_in: int
     user_id: int
     nickname: str
     role: str
     is_new_user: bool = False
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
 
 
 class WechatLoginRequest(BaseModel):

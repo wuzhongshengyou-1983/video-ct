@@ -30,10 +30,11 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     API_BASE_URL: str = "http://localhost:8000"
 
-    # JWT
+    # JWT（A1: access 短效 + refresh 轮换）
     JWT_SECRET: str = "dev-secret-change-me"
     JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 天
+    JWT_EXPIRE_MINUTES: int = 30  # access token 寿命（分钟）
+    JWT_REFRESH_EXPIRE_DAYS: int = 7  # refresh token 寿命（天）
 
     # 数据库
     DATABASE_URL: str = "sqlite+aiosqlite:///./storage/video_ct.db"

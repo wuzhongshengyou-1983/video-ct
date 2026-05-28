@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Body, Header, Query
 from fastapi.responses import RedirectResponse
 from loguru import logger
 
@@ -12,7 +12,7 @@ from app.core.exceptions import RateLimitedError, UnauthorizedError
 from app.core.rate_limit import check_otp_rate_limit
 from app.deps import DbSession, CurrentUser
 from app.schemas.auth import (
-    PhoneOTPRequest, PhoneOTPVerify, TokenResponse, WechatLoginRequest
+    PhoneOTPRequest, PhoneOTPVerify, RefreshRequest, TokenResponse, WechatLoginRequest
 )
 from app.schemas.user import UserMe
 from app.services import auth_service
@@ -40,18 +40,41 @@ async def verify_otp(payload: PhoneOTPVerify, db: DbSession):
     user, is_new = await auth_service.login_or_register_by_phone(
         db, phone=payload.phone, referrer_code=payload.referrer_code
     )
-    token = auth_service.issue_token(user)
+    token = await auth_service.issue_token(user)
     return TokenResponse(**token, is_new_user=is_new)
 
 
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(payload: RefreshRequest, db: DbSession):
+    """用 refresh token 换新的 access+refresh 对（单次轮换：旧 refresh 立即失效）."""
+    from sqlalchemy import select
+    from app.core.security import consume_refresh
+    from app.models.user import User
+
+    sub = await consume_refresh(payload.refresh_token)
+    if not sub:
+        raise UnauthorizedError("refresh token 无效或已过期")
+    res = await db.execute(select(User).where(User.id == int(sub)))
+    user = res.scalar_one_or_none()
+    if not user or not user.is_active:
+        raise UnauthorizedError("用户不存在或已禁用")
+    token = await auth_service.issue_token(user)
+    return TokenResponse(**token, is_new_user=False)
+
+
 @router.post("/logout")
-async def logout(authorization: str | None = Header(default=None)):
-    """登出 · 把当前 access token 的 jti 写入吊销名单（无状态 JWT 主动失效）."""
-    from app.core.security import revoke_access_token
+async def logout(
+    authorization: str | None = Header(default=None),
+    refresh_token: str | None = Body(default=None, embed=True),
+):
+    """登出 · 吊销当前 access token 的 jti + 删除 refresh 单次凭证."""
+    from app.core.security import consume_refresh, revoke_access_token
 
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization.split(" ", 1)[1].strip()
         await revoke_access_token(token)
+    if refresh_token:
+        await consume_refresh(refresh_token)
     return {"ok": True}
 
 
@@ -79,7 +102,7 @@ async def wechat_login(payload: WechatLoginRequest, db: DbSession):
         await db.commit()
         await db.refresh(user)
         is_new = True
-    token = auth_service.issue_token(user)
+    token = await auth_service.issue_token(user)
     return TokenResponse(**token, is_new_user=is_new)
 
 
@@ -152,11 +175,12 @@ async def wechat_oauth_callback(
             await db.refresh(user)
             is_new = True
 
-        token_data = auth_service.issue_token(user)
+        token_data = await auth_service.issue_token(user)
         separator = "&" if "?" in redirect_path else "?"
         redirect_url = (
             f"{redirect_path}{separator}"
             f"wechat_token={token_data['access_token']}"
+            f"&wechat_refresh={token_data['refresh_token']}"
         )
 
         logger.info(

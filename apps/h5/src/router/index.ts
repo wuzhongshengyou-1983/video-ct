@@ -38,11 +38,13 @@ router.beforeEach(async (to) => {
   // 微信 OAuth 回调：URL 中有 wechat_token → 自动登录
   const wechatToken = to.query.wechat_token as string | undefined
   if (wechatToken) {
-    userStore.setToken(wechatToken)
+    const wechatRefresh = to.query.wechat_refresh as string | undefined
+    userStore.setTokens(wechatToken, wechatRefresh)
     await userStore.fetchMe()
-    // 移除 wechat_token 参数，清理 URL
+    // 移除 token 参数，清理 URL
     const cleanQuery = { ...to.query }
     delete cleanQuery.wechat_token
+    delete cleanQuery.wechat_refresh
     return { path: to.path, query: cleanQuery, replace: true }
   }
 

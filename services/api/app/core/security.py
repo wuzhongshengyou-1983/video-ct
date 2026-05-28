@@ -52,6 +52,12 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
+def _encode(payload: dict[str, Any]) -> str:
+    header = {"alg": settings.JWT_ALGORITHM, "typ": "JWT"}
+    token = _jwt.encode(header, payload, settings.JWT_SECRET)
+    return token.decode("utf-8") if isinstance(token, bytes) else token
+
+
 def create_access_token(subject: str | int, extra: dict | None = None) -> str:
     now = datetime.now(timezone.utc)
     expire = now + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
@@ -61,12 +67,27 @@ def create_access_token(subject: str | int, extra: dict | None = None) -> str:
         "iat": int(now.timestamp()),
         "iss": settings.APP_NAME,
         "jti": uuid4().hex,
+        "type": "access",
     }
     if extra:
         payload.update(extra)
-    header = {"alg": settings.JWT_ALGORITHM, "typ": "JWT"}
-    token = _jwt.encode(header, payload, settings.JWT_SECRET)
-    return token.decode("utf-8") if isinstance(token, bytes) else token
+    return _encode(payload)
+
+
+def create_refresh_token(subject: str | int) -> tuple[str, str]:
+    """生成 refresh token，返回 (token, jti)。需配合 store_refresh 登记到 Redis 才生效."""
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
+    jti = uuid4().hex
+    payload: dict[str, Any] = {
+        "sub": str(subject),
+        "exp": int(expire.timestamp()),
+        "iat": int(now.timestamp()),
+        "iss": settings.APP_NAME,
+        "jti": jti,
+        "type": "refresh",
+    }
+    return _encode(payload), jti
 
 
 def decode_token(token: str) -> dict | None:
@@ -105,6 +126,48 @@ async def is_jti_revoked(jti: str | None) -> bool:
     except Exception as exc:
         logger.warning(f"[Security] is_jti_revoked 查询失败，放行: {exc}")
         return False
+
+
+_REFRESH_PREFIX = "jwt:refresh:"
+
+
+async def store_refresh(jti: str, subject: str | int) -> None:
+    """登记 refresh jti 到 Redis（单次使用凭证），TTL = refresh 寿命."""
+    r = _get_revoke_redis()
+    if r is None or not jti:
+        return
+    ttl = settings.JWT_REFRESH_EXPIRE_DAYS * 86400
+    try:
+        await r.setex(f"{_REFRESH_PREFIX}{jti}", ttl, str(subject))
+    except Exception as exc:
+        logger.warning(f"[Security] store_refresh 写入失败: {exc}")
+
+
+async def consume_refresh(token: str) -> str | None:
+    """校验并消费 refresh token（单次使用·简单轮换）。有效则删除该 jti 并返回 subject，否则 None.
+
+    无 Redis 时返回 None —— refresh 依赖 Redis 单次凭证存储，降级为要求重新登录。
+    """
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "refresh":
+        return None
+    jti = payload.get("jti")
+    sub = payload.get("sub")
+    if not jti or not sub:
+        return None
+    r = _get_revoke_redis()
+    if r is None:
+        return None
+    key = f"{_REFRESH_PREFIX}{jti}"
+    try:
+        stored = await r.get(key)
+        if stored is None or str(stored) != str(sub):
+            return None
+        await r.delete(key)  # 用掉即删，旧 refresh 不可再用
+        return str(sub)
+    except Exception as exc:
+        logger.warning(f"[Security] consume_refresh 失败: {exc}")
+        return None
 
 
 async def revoke_access_token(token: str) -> bool:

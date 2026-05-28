@@ -156,7 +156,7 @@ async function login() {
   loading.value = true
   try {
     const r = await authApi.verifyOtp(phone.value, code.value, referrer.value || undefined)
-    userStore.setToken(r.access_token)
+    userStore.setTokens(r.access_token, r.refresh_token)
     await userStore.fetchMe()
     trackConversion(r.is_new_user ? 'register' : 'login')
     Toast.success(r.is_new_user ? '注册成功' : '登录成功')

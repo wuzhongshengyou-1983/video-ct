@@ -8,6 +8,10 @@ export const authApi = {
   wechatLogin: (code: string, referrer_code?: string) =>
     http.post<unknown, any>('/api/v1/auth/wechat/login', { code, referrer_code }),
   me: () => http.get<unknown, any>('/api/v1/auth/me'),
+  refresh: (refresh_token: string) =>
+    http.post<unknown, any>('/api/v1/auth/refresh', { refresh_token }),
+  logout: (refresh_token?: string) =>
+    http.post<unknown, { ok: boolean }>('/api/v1/auth/logout', { refresh_token }, { _noToast: true }),
 }
 
 // 用户

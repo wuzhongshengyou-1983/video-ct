@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.exceptions import BizException, UnauthorizedError
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_refresh_token, store_refresh
 from app.models.referrer import ReferrerLink, ReferrerLevel, RewardAccount
 from app.models.user import User, UserProfile
 
@@ -103,14 +103,17 @@ async def login_or_register_by_phone(
     if not user.is_active:
         raise UnauthorizedError("账号已被禁用")
 
-    token = create_access_token(subject=user.id, extra={"role": user.role})
     return user, is_new
 
 
-def issue_token(user: User) -> dict:
-    token = create_access_token(subject=user.id, extra={"role": user.role})
+async def issue_token(user: User) -> dict:
+    """签发 access + refresh 对（refresh 登记到 Redis 单次凭证）."""
+    access = create_access_token(subject=user.id, extra={"role": user.role})
+    refresh, rjti = create_refresh_token(subject=user.id)
+    await store_refresh(rjti, user.id)
     return {
-        "access_token": token,
+        "access_token": access,
+        "refresh_token": refresh,
         "token_type": "bearer",
         "expires_in": settings.JWT_EXPIRE_MINUTES * 60,
         "user_id": user.id,
