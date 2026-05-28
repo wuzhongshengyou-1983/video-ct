@@ -104,6 +104,14 @@
           提交反馈
         </van-button>
       </section>
+
+      <!-- 复诊入口 -->
+      <section class="vct-card resubmit-card">
+        <div class="resubmit-hint">改完视频了？重新诊断，看看提升了多少。</div>
+        <van-button block plain type="primary" size="small" @click="resubmit" :loading="resubmitting">
+          修改后重新上传，对比改善
+        </van-button>
+      </section>
     </div>
 
     <van-loading v-else size="24" vertical>加载报告中…</van-loading>
@@ -114,7 +122,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Toast } from 'vant'
-import { diagnosisApi } from '@/api'
+import { diagnosisApi, eventsApi } from '@/api'
 import { getGradeLabel } from '@video-ct/shared'
 import { trackPageView, trackClick } from '@/utils/tracker'
 import RadarChart from '@/components/RadarChart.vue'
@@ -129,6 +137,7 @@ const { updateShare } = useWechatShare()
 const rating = ref(0)
 const feedback = ref('')
 const isOffline = ref(false)
+const resubmitting = ref(false)
 
 const CACHE_KEY = `vct_report_${id}`
 const RECENT_LIST_KEY = 'vct_recent_reports'
@@ -201,7 +210,12 @@ function prioCls(p: string) {
 async function submitFeedback() {
   trackClick('feedback', { report_id: id, rating: rating.value })
   try {
-    await diagnosisApi.feedback(id, rating.value, feedback.value || undefined)
+    // 桥接3：反馈数据流走 /events/track，供 v3 飞轮使用
+    await eventsApi.track('suggestion_feedback', {
+      report_id: id,
+      rating: rating.value,
+      feedback: feedback.value || undefined,
+    })
     Toast.success('谢谢反馈！AI 会更聪明')
   } catch (e: any) {
     if (e.status && e.status >= 500) {
@@ -209,6 +223,19 @@ async function submitFeedback() {
     } else {
       Toast.fail(e.message || '提交失败')
     }
+  }
+}
+
+async function resubmit() {
+  resubmitting.value = true
+  try {
+    const newDiag = await diagnosisApi.resubmit(id)
+    Toast.success('复诊已提交，稍后查看对比报告')
+    router.push(`/diagnose/${newDiag.id}`)
+  } catch (e: any) {
+    Toast.fail(e.message || '复诊提交失败')
+  } finally {
+    resubmitting.value = false
   }
 }
 
@@ -330,6 +357,11 @@ onMounted(async () => {
 }
 
 .feedback-input { margin: 12px 0; }
+
+.resubmit-card {
+  margin-top: 8px;
+  .resubmit-hint { font-size: 12px; color: var(--vct-text-2); margin-bottom: 10px; }
+}
 
 .offline-bar {
   margin: 8px 16px; padding: 8px 12px;

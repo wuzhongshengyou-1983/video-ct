@@ -42,6 +42,14 @@ export const diagnosisApi = {
   report: (id: number | string) => http.get<unknown, any>(`/api/v1/diagnoses/${id}/report`),
   feedback: (id: number | string, rating: number, feedback?: string) =>
     http.post(`/api/v1/diagnoses/${id}/report/feedback`, { rating, feedback }),
+  resubmit: (id: number | string) =>
+    http.post<unknown, any>(`/api/v1/diagnoses/${id}/resubmit`, {}),
+}
+
+// 行为事件追踪（v3 数据飞轮）
+export const eventsApi = {
+  track: (event_type: string, payload?: Record<string, unknown>) =>
+    http.post<unknown, { ok: boolean }>('/api/v1/events/track', { event_type, payload }, { _noToast: true }),
 }
 
 // 对标
