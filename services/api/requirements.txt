@@ -20,7 +20,7 @@ bcrypt==4.2.1
 
 # HTTP client (for LLM calls + crawlers)
 httpx==0.28.1
-tenacity==9.0.0
+tenacity==9.1.4
 
 # Cache + task queue
 redis==5.2.1
