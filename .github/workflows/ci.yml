@@ -22,7 +22,7 @@ concurrency:
 env:
   PYTHON_VERSION: "3.13"
   NODE_VERSION: "20"
-  PNPM_VERSION: "10"
+  PNPM_VERSION: "9"
 
 jobs:
 

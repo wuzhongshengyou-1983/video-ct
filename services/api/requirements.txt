@@ -32,9 +32,9 @@ loguru==0.7.3
 orjson==3.10.12
 ulid-py==1.1.0
 
-# Templating + PDF
+# Templating
 jinja2==3.1.4
-weasyprint==63.0
+# weasyprint==63.0  # PDF 生成，需系统级 libcairo/pango，见 requirements-pdf.txt
 
 # Testing
 pytest==8.3.4

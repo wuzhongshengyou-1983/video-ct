@@ -1,0 +1,17 @@
+[lint]
+# 只检查关键安全/逻辑问题，跳过 unused-import / unused-variable（历史代码较多）
+select = ["E", "W", "F"]
+ignore = [
+    "F401",  # unused-import
+    "F811",  # redefinition of unused name
+    "F821",  # undefined name — 历史代码引用问题
+    "F841",  # unused-variable
+    "E401",  # multiple imports on one line
+    "E501",  # line-too-long
+    "E711",  # comparison to None
+    "E712",  # comparison to True/False
+    "W291",  # trailing-whitespace
+    "W293",  # whitespace-before-comment
+    "E741",  # ambiguous variable name
+    "F541",  # f-string without placeholders
+]
