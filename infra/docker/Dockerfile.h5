@@ -21,15 +21,21 @@ COPY apps/h5/package.json apps/h5/
 COPY apps/h5/tsconfig.json apps/h5/
 COPY apps/h5/vite.config.ts apps/h5/
 COPY apps/h5/index.html apps/h5/
-COPY apps/h5/env.d.ts apps/h5/
 COPY apps/h5/src/ apps/h5/src/
-COPY apps/h5/public/ apps/h5/public/ 2>/dev/null || true
+COPY apps/h5/public/ apps/h5/public/
 
-# 复制共享 packages（如有）
-COPY packages/ packages/ 2>/dev/null || true
+# 复制共享 packages
+COPY packages/ packages/
 
 # 安装依赖 + 构建
-RUN pnpm install --frozen-lockfile --filter @video-ct/h5 \
+RUN node -e "const fs=require('fs'); \
+      const r=JSON.parse(fs.readFileSync('package.json','utf8')); \
+      delete r.scripts.prepare; \
+      fs.writeFileSync('package.json',JSON.stringify(r,null,2)); \
+      const h=JSON.parse(fs.readFileSync('apps/h5/package.json','utf8')); \
+      h.scripts.build='vite build'; \
+      fs.writeFileSync('apps/h5/package.json',JSON.stringify(h,null,2))" \
+    && pnpm install --frozen-lockfile --filter @video-ct/h5 \
     && pnpm --filter @video-ct/h5 build
 
 # --------------------------- Stage 2: Nginx ---------------------------
@@ -41,8 +47,8 @@ RUN apk add --no-cache curl
 # 复制构建产物
 COPY --from=builder /build/apps/h5/dist /usr/share/nginx/html
 
-# 复制 Nginx 配置
-COPY infra/docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+# 复制 Nginx 配置（H5 专用：仅静态文件，不含 upstream 代理）
+COPY infra/docker/nginx/h5.conf /etc/nginx/conf.d/default.conf
 
 # 启动前替换环境变量
 COPY infra/docker/nginx/docker-entrypoint.sh /docker-entrypoint.sh
