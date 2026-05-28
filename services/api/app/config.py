@@ -7,7 +7,10 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+try:
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+except IndexError:
+    REPO_ROOT = Path(__file__).resolve().parent
 
 
 class Settings(BaseSettings):

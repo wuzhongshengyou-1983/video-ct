@@ -22,11 +22,9 @@ from app.services.notification import (  # noqa: F401
     notify_payment_success,
     notify_subscription_expiring,
 )
-from app.services.diagnosis_service import DiagnosisService
 from app.services.llm_router import llm_router, LLMRouter, LLMResponse
 from app.services.ocr_asr import extract_text_from_image, transcribe_audio, extract_video_info
 from app.services.storage import upload_file, get_file_url, delete_file, file_exists, generate_upload_key
-from app.services.task_queue import TaskQueue
 from app.services.tikhub_service import (
     TikHubClient,
     get_tikhub,
@@ -67,7 +65,6 @@ __all__ = [
     "notify_payment_success",
     "notify_subscription_expiring",
     # other services
-    "DiagnosisService",
     "llm_router",
     "LLMRouter",
     "LLMResponse",
@@ -79,7 +76,6 @@ __all__ = [
     "delete_file",
     "file_exists",
     "generate_upload_key",
-    "TaskQueue",
     # tikhub
     "TikHubClient",
     "get_tikhub",

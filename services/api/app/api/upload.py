@@ -11,8 +11,11 @@ from app.deps import CurrentUser
 
 router = APIRouter()
 
-# 上传目录（相对于项目根）
-UPLOAD_DIR = Path(__file__).resolve().parents[4] / "storage" / "uploads" / "avatars"
+# 上传目录：本地开发 parents[4]=repo_root，容器内 parents[2]=/app
+try:
+    UPLOAD_DIR = Path(__file__).resolve().parents[4] / "storage" / "uploads" / "avatars"
+except IndexError:
+    UPLOAD_DIR = Path(__file__).resolve().parents[2] / "storage" / "uploads" / "avatars"
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE = 2 * 1024 * 1024  # 2MB
 

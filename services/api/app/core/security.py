@@ -38,3 +38,6 @@ def decode_token(token: str) -> dict | None:
         return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
         return None
+
+
+create_token = create_access_token
