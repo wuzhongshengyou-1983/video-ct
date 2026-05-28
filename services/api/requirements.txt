@@ -1,11 +1,11 @@
 # Web framework
-fastapi==0.115.5
-uvicorn[standard]==0.32.1
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
 python-multipart==0.0.17
 
 # Data validation
-pydantic==2.10.3
-pydantic-settings==2.6.1
+pydantic==2.13.4
+pydantic-settings==2.14.1
 
 # Database
 sqlalchemy[asyncio]==2.0.36
