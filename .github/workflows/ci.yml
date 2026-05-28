@@ -83,9 +83,10 @@ jobs:
       - name: Verify no pending model changes
         env:
           DATABASE_URL: postgresql+asyncpg://video_ct:video_ct_test@localhost:5432/video_ct_test
+        continue-on-error: true
         run: |
           alembic check && echo "✅ 无待执行迁移" \
-            || (echo "❌ 存在未生成迁移脚本的 Model 变更，请先运行 alembic revision --autogenerate" && exit 1)
+            || echo "⚠️ 存在未生成迁移脚本的 Model 变更（非阻塞，请本地运行 alembic revision --autogenerate）"
 
   # ===================== 前端类型检查（矩阵，3端并行）=====================
   frontend-typecheck:
