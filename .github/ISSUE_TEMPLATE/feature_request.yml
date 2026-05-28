@@ -1,0 +1,44 @@
+name: 功能需求
+description: 提一个新功能或改进建议
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 影响模块
+      options:
+        - H5 C端
+        - 管理后台 Admin
+        - 顾问后台 Consultant
+        - 后端 API / Agent
+        - 数据采集 fire_eye
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解决什么问题
+      placeholder: 当前哪里不好用，或者缺少什么能力
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 期望的方案
+      placeholder: 你希望怎么做，可以是草图、流程描述
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级（你认为）
+      options:
+        - P0 — 阻塞核心流程
+        - P1 — 重要但有绕路方案
+        - P2 — 锦上添花
+    validations:
+      required: true

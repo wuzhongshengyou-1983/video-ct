@@ -1,0 +1,29 @@
+# CODEOWNERS — 文件负责人配置
+# PR 修改对应路径时，自动 request review
+# 格式: <路径模式> <GitHub用户名>
+# 文档: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 默认负责人（兜底）
+*                          @metafo333-hue
+
+# 前端各端
+apps/h5/                   @metafo333-hue
+apps/admin/                @metafo333-hue
+apps/consultant/           @metafo333-hue
+apps/open/                 @metafo333-hue
+
+# 后端核心
+services/api/app/agents/   @metafo333-hue
+services/api/app/api/      @metafo333-hue
+services/api/app/services/fire_eye/  @metafo333-hue
+
+# 基础设施 & CI/CD（高风险，必须 review）
+.github/                   @metafo333-hue
+infra/                     @metafo333-hue
+docker-compose.yml         @metafo333-hue
+
+# 共享包（改动影响多端）
+packages/shared/           @metafo333-hue
+
+# 文档（不阻塞 merge，可选 review）
+docs/                      @metafo333-hue

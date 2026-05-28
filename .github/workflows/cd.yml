@@ -1,7 +1,13 @@
 # =============================================================================
-# Video CT · CD 流水线（骨架）
-# 触发: push tag v* (如 v0.1.0)
-# 构建 Docker 镜像 → 推送到 GitHub Container Registry → 部署
+# Video CT · CD 流水线
+# 触发: push tag v* (如 v0.3.0)
+# Job 链: build-push → migrate → deploy → health-check
+#
+# 所需 GitHub Secrets（在 Settings → Secrets → Actions 配置）:
+#   DEPLOY_HOST     — ECS 公网 IP（如 150.158.20.173）
+#   DEPLOY_USER     — SSH 用户（如 ubuntu）
+#   DEPLOY_SSH_KEY  — SSH 私钥（PEM 格式）
+#   DEPLOY_PATH     — 部署目录（如 /opt/video-ct）
 # =============================================================================
 
 name: CD
@@ -18,43 +24,37 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  # ===================== Build & Push Docker Images =====================
+
+  # ===================== 构建 + 推送镜像到 GHCR =====================
   build-push:
-    name: Build and Push Images
+    name: Build & Push (${{ matrix.target }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      id-token: write
-
     strategy:
       matrix:
         include:
           - target: api
             dockerfile: infra/docker/Dockerfile.api
-            context: .
           - target: h5
             dockerfile: infra/docker/Dockerfile.h5
-            context: .
           - target: admin
             dockerfile: infra/docker/Dockerfile.admin
-            context: .
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: Extract image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -63,12 +63,12 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
+          context: .
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -76,28 +76,97 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ===================== Deploy（占位） =====================
+  # ===================== 数据库迁移 =====================
+  migrate:
+    name: DB Migration (alembic upgrade head)
+    runs-on: ubuntu-latest
+    needs: build-push
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run alembic upgrade head on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            echo "▶ 拉取最新镜像..."
+            docker compose pull api
+            echo "▶ 执行数据库迁移..."
+            docker compose run --rm api alembic upgrade head
+            echo "✅ 迁移完成"
+
+  # ===================== 滚动部署 =====================
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: build-push
-    if: false  # 占位，生产环境替换为真实条件（如 startsWith(github.ref, 'refs/tags/v')）
-
+    needs: migrate
+    environment:
+      name: production
+      url: https://openo.vip
     steps:
-      - name: Deploy placeholder
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "▶ 拉取全部最新镜像..."
+            docker compose pull
+
+            echo "▶ 滚动重启服务（zero-downtime）..."
+            docker compose up -d --remove-orphans
+
+            echo "▶ 清理旧镜像..."
+            docker image prune -f
+
+            echo "✅ 部署完成 — $(date '+%Y-%m-%d %H:%M:%S CST')"
+
+  # ===================== 部署后健康检查 =====================
+  health-check:
+    name: Post-Deploy Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Wait for service to be ready (30s)
+        run: sleep 30
+
+      - name: Check /healthz
         run: |
-          echo "========================================"
-          echo " CD · 部署步骤（占位）"
-          echo "========================================"
-          echo ""
-          echo "生产环境部署时，替换以下步骤："
-          echo "  1. SSH 连接到 ECS 服务器"
-          echo "  2. docker compose pull（拉取最新镜像）"
-          echo "  3. docker compose up -d（滚动更新）"
-          echo "  4. healthcheck 验证"
-          echo "  5. 清理旧镜像"
-          echo ""
-          echo "示例:"
-          echo "  ssh deploy@your-ecs-ip 'cd /opt/video-ct && docker compose pull && docker compose up -d'"
-          echo ""
-          echo "========================================"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://openo.vip/healthz)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ /healthz 返回 $STATUS，部署可能失败"
+            exit 1
+          fi
+          echo "✅ /healthz → 200"
+
+      - name: Check /readyz
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://openo.vip/readyz)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ /readyz 返回 $STATUS（DB 或 Redis 可能未就绪）"
+            exit 1
+          fi
+          echo "✅ /readyz → 200"
+
+      - name: Notify deploy success
+        if: success()
+        run: |
+          echo "🚀 Video CT ${{ github.ref_name }} 部署成功"
+          echo "   时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "   镜像: ghcr.io/${{ github.repository }}-api:${{ github.ref_name }}"
+
+      - name: Notify deploy failure
+        if: failure()
+        run: |
+          echo "🔴 Video CT ${{ github.ref_name }} 健康检查失败，请立即检查服务日志"
+          echo "   ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+          echo "   cd ${{ secrets.DEPLOY_PATH }} && docker compose logs --tail=50 api"
+          exit 1
