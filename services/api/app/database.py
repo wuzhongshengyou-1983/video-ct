@@ -28,6 +28,15 @@ def _create_engine() -> AsyncEngine:
         # SQLite 不需要连接池
         from sqlalchemy.pool import NullPool
         kwargs["poolclass"] = NullPool
+    else:
+        # PostgreSQL（asyncpg）显式连接池配置，避免裸配导致连接耗尽 / 半开连接
+        kwargs.update(
+            pool_size=settings.DB_POOL_SIZE,
+            max_overflow=settings.DB_MAX_OVERFLOW,
+            pool_recycle=settings.DB_POOL_RECYCLE,
+            pool_pre_ping=settings.DB_POOL_PRE_PING,
+            pool_timeout=settings.DB_POOL_TIMEOUT,
+        )
     return create_async_engine(url, **kwargs)
 
 

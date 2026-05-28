@@ -160,8 +160,6 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET: test-secret-for-ci-only
         run: python -m pytest tests/ -v --tb=short
-        # TODO: 补充 test_api.py / test_agents.py 后移除 continue-on-error（见 docs/07-进度/07-测试覆盖现状.md）
-        continue-on-error: true
 
   # ===================== E2E 测试（软性）=====================
   test-e2e:

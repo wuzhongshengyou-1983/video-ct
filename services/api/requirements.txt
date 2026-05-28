@@ -15,7 +15,9 @@ psycopg2-binary==2.9.10
 alembic==1.14.0
 
 # Auth & security
-python-jose[cryptography]==3.3.0
+# A1: 弃用 python-jose（CVE-2024-33663），改用 authlib（锁定算法防 alg 混淆）
+authlib==1.3.2
+cryptography==44.0.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
 

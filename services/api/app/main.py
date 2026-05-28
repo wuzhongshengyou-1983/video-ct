@@ -23,6 +23,13 @@ from app.database import Base, engine
 async def lifespan(app: FastAPI):
     # 启动
     logger.info(f"启动 {settings.APP_NAME} v{__version__} env={settings.NODE_ENV}")
+
+    # A1 安全守卫：生产环境禁止使用默认/弱 JWT 密钥（拒绝启动，防 token 伪造）
+    if settings.is_production and settings.JWT_SECRET in {"", "dev-secret-change-me"}:
+        raise RuntimeError(
+            "生产环境检测到默认 JWT_SECRET，拒绝启动。请在环境变量设置高强度 JWT_SECRET。"
+        )
+
     Path("./storage").mkdir(exist_ok=True)
     Path(settings.STORAGE_LOCAL_PATH).mkdir(parents=True, exist_ok=True)
 
@@ -75,7 +82,11 @@ app.include_router(ws_router)
 
 @app.exception_handler(BizException)
 async def biz_handler(_request, exc: BizException):
-    return JSONResponse(status_code=exc.status_code, content=exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=exc.detail,
+        headers=getattr(exc, "headers", None),
+    )
 
 
 @app.get("/")
