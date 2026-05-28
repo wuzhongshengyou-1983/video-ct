@@ -62,7 +62,7 @@
         </van-button>
       </div>
 
-      <div class="dev-tip">
+      <div v-if="isDev" class="dev-tip">
         💡 开发模式：万能验证码 <code>{{ DEV_OTP_CODE }}</code>
       </div>
     </div>
@@ -78,6 +78,8 @@ import { useUserStore } from '@/stores/user'
 import { DEV_OTP_CODE } from '@video-ct/shared'
 import { trackPageView, trackConversion } from '@/utils/tracker'
 import { isWechat } from '@/utils/wechat'
+
+const isDev = import.meta.env.DEV
 
 const router = useRouter()
 const route = useRoute()

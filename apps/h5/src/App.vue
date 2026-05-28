@@ -6,6 +6,7 @@
       </transition>
     </router-view>
     <NavBar v-if="$route.meta.showTabbar" />
+    <footer class="icp-footer">蜀ICP备2026010386号-1</footer>
   </div>
 </template>
 
@@ -33,4 +34,17 @@ onMounted(() => {
 }
 .fade-enter-active,.fade-leave-active{ transition: opacity .2s; }
 .fade-enter-from,.fade-leave-to{ opacity: 0; }
+.icp-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #6b7280;
+  padding: 4px 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: 10;
+}
 </style>
