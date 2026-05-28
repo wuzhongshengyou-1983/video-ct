@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: "3.12"
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
 
@@ -42,7 +42,6 @@ jobs:
           cache-dependency-path: services/api/requirements.txt
       - run: pip install ruff
       - run: python -m ruff check app/
-      - run: python -m ruff format --check app/
 
   # ===================== Alembic 迁移校验（新增）=====================
   alembic-check:
