@@ -34,3 +34,17 @@ class QuotaExceededError(BizException):
 class PaymentError(BizException):
     def __init__(self, message: str):
         super().__init__("PAYMENT_ERROR", message, http_status=402)
+
+
+class RateLimitedError(BizException):
+    def __init__(self, message: str = "请求过于频繁，请稍后再试", retry_after_sec: int = 60):
+        super().__init__("RATE_LIMITED", message, http_status=429)
+        self.detail["retry_after_sec"] = retry_after_sec
+        self.headers = {"Retry-After": str(retry_after_sec)}
+
+
+class LLMBudgetExceededError(BizException):
+    """全系统单日 LLM 成本达到硬上限 · 熔断后续调用（A3）."""
+
+    def __init__(self, message: str = "AI 服务今日额度已用尽，请稍后再试"):
+        super().__init__("LLM_BUDGET_EXCEEDED", message, http_status=503)

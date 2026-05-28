@@ -7,7 +7,10 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+try:
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+except IndexError:
+    REPO_ROOT = Path(__file__).resolve().parent
 
 
 class Settings(BaseSettings):
@@ -35,6 +38,16 @@ class Settings(BaseSettings):
     # 数据库
     DATABASE_URL: str = "sqlite+aiosqlite:///./storage/video_ct.db"
     REDIS_URL: str = "redis://localhost:6379/0"
+    # 连接池（仅 PostgreSQL 生效；单机部署默认 5+3=8 上限）
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 3
+    DB_POOL_RECYCLE: int = 1800  # 30 分钟回收，规避云数据库空闲断连
+    DB_POOL_PRE_PING: bool = True  # 取连接前探活，剔除半开连接
+    DB_POOL_TIMEOUT: int = 30  # 池满时等待连接的超时秒数
+
+    # AI · 成本硬上限（A3）· 单位：分（cents）· 0 = 不限（关闭守卫）
+    LLM_DAILY_BUDGET_CENTS: int = 0  # 全系统单日 LLM 调用成本硬上限，达到即拦截后续调用
+    LLM_BUDGET_FAIL_OPEN: bool = True  # Redis 不可用时：True=放行(可用性优先) False=拦截(成本优先)
 
     # AI · DeepSeek
     DEEPSEEK_API_KEY: str = ""

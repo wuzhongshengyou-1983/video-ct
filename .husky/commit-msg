@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# 1. commitlint 分类校验
+npx --no -- commitlint --edit "$1"
+
+# 2. 写入窗口标识到 commit body（已有则跳过）
+if grep -q "^win:" "$1"; then exit 0; fi
+WIN_ID="${VIDEO_CT_WINDOW:-$(hostname)-$$}"
+printf "\nwin: %s\n" "$WIN_ID" >> "$1"

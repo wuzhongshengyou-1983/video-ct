@@ -160,8 +160,6 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET: test-secret-for-ci-only
         run: python -m pytest tests/ -v --tb=short
-        # TODO: 补充 test_api.py / test_agents.py 后移除 continue-on-error（见 docs/07-进度/07-测试覆盖现状.md）
-        continue-on-error: true
 
   # ===================== E2E 测试（软性）=====================
   test-e2e:
@@ -187,3 +185,40 @@ jobs:
           API_URL: http://localhost:8000
           H5_URL: http://localhost:5173
         run: npx playwright test --project=chromium
+
+  # ===================== Danger JS · PR 规范检查 =====================
+  danger:
+    name: Danger JS (PR Rules)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - run: pnpm install --no-frozen-lockfile --ignore-scripts
+      - name: Run Danger
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx danger ci
+
+  # ===================== Phase Gate 状态输出 =====================
+  phase-gate-status:
+    name: Phase Gate Status
+    runs-on: ubuntu-latest
+    needs: [test-backend]
+    if: github.ref == 'refs/heads/main'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r services/api/requirements.txt
+      - name: Check phase gate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python3 scripts/check-phase-gate.py --json

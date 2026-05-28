@@ -30,10 +30,15 @@ class TokenBucket:
         redis_client: "aioredis.Redis | None" = None,
         rate: int | None = None,
         window_sec: int = 60,
+        fail_open: bool = True,
     ):
         self._redis = redis_client
         self._rate = rate or settings.RATE_LIMIT_PER_MINUTE
         self._window_sec = window_sec
+        # Redis 异常时的失败策略：
+        #   fail_open=True  → 放行（通用 API 限流，可用性优先）
+        #   fail_open=False → 退回内存限流（OTP/短信等成本敏感入口，安全优先，绝不放行无限制）
+        self._fail_open = fail_open
         # 内存回退（开发环境无 Redis 时使用）
         self._memory_buckets: dict[str, tuple[float, int]] = {}
         self._memory_cleanup_at: float = time.monotonic()
@@ -80,9 +85,11 @@ class TokenBucket:
             )
             return bool(result)
         except Exception as exc:
-            logger.warning(f"[RateLimit] Redis error, falling back to allow: {exc}")
-            # Redis 异常时放行，避免误拦
-            return True
+            if self._fail_open:
+                logger.warning(f"[RateLimit] Redis error, falling back to allow: {exc}")
+                return True
+            logger.warning(f"[RateLimit] Redis error, falling back to in-memory limit: {exc}")
+            return self._consume_memory(key, tokens)
 
     def _consume_memory(self, key: str, tokens: int) -> bool:
         """内存令牌桶 · 开发环境回退."""
@@ -114,6 +121,56 @@ class TokenBucket:
 
         self._memory_buckets[key] = (ts, used + tokens)
         return True
+
+
+# ── OTP 手机号维度限流（A4）─────────────────────────────
+# 短信验证码成本敏感且是撞库入口，需独立于全局中间件做手机号维度双窗口限流。
+OTP_RATE_PER_MIN = 3
+OTP_RATE_PER_HOUR = 10
+
+_otp_min_bucket: "TokenBucket | None" = None
+_otp_hour_bucket: "TokenBucket | None" = None
+
+
+def _get_otp_buckets() -> tuple["TokenBucket", "TokenBucket"]:
+    """懒加载 OTP 双窗口令牌桶（共享一个 Redis 连接，无 Redis 则内存回退）."""
+    global _otp_min_bucket, _otp_hour_bucket
+    if _otp_min_bucket is None or _otp_hour_bucket is None:
+        redis_client = None
+        if HAS_REDIS and settings.REDIS_URL:
+            try:
+                redis_client = aioredis.from_url(
+                    settings.REDIS_URL, encoding="utf-8", decode_responses=True
+                )
+            except Exception as exc:
+                logger.warning(f"[OTPRateLimit] Redis unavailable, using in-memory: {exc}")
+        _otp_min_bucket = TokenBucket(
+            redis_client=redis_client, rate=OTP_RATE_PER_MIN, window_sec=60, fail_open=False
+        )
+        _otp_hour_bucket = TokenBucket(
+            redis_client=redis_client, rate=OTP_RATE_PER_HOUR, window_sec=3600, fail_open=False
+        )
+    return _otp_min_bucket, _otp_hour_bucket
+
+
+async def check_otp_rate_limit(phone: str) -> tuple[bool, int]:
+    """OTP 发送限流 · 手机号维度 3/min + 10/h。
+
+    返回 (allowed, retry_after_sec)。先查分钟窗口（更紧），通过后再查小时窗口。
+    """
+    min_bucket, hour_bucket = _get_otp_buckets()
+    if not await min_bucket.consume(f"otp:min:{phone}"):
+        return False, 60
+    if not await hour_bucket.consume(f"otp:hour:{phone}"):
+        return False, 3600
+    return True, 0
+
+
+def _reset_otp_buckets() -> None:
+    """测试用：清空 OTP 桶单例。"""
+    global _otp_min_bucket, _otp_hour_bucket
+    _otp_min_bucket = None
+    _otp_hour_bucket = None
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

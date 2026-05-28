@@ -7,7 +7,7 @@ from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import UnauthorizedError
-from app.core.security import decode_token
+from app.core.security import decode_token, is_jti_revoked
 from app.database import get_db
 from app.models.user import User
 from sqlalchemy import select
@@ -26,6 +26,8 @@ async def get_current_user(
     payload = decode_token(token)
     if not payload or "sub" not in payload:
         raise UnauthorizedError("invalid token")
+    if await is_jti_revoked(payload.get("jti")):
+        raise UnauthorizedError("token revoked")
     user_id = int(payload["sub"])
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

@@ -48,16 +48,19 @@ async def wechat_pay_callback(request: Request):
 
     logger.info("[WEBHOOK] 验签通过 order_no={}", order_no)
 
-    # 3. 查订单
+    # 3. 查订单（加行锁串行化并发回调 · 微信会重试，with_for_update 防双重激活/双重返奖；
+    #    PostgreSQL 下生效，SQLite 自动省略 FOR UPDATE 子句不影响）
     async for db in get_db():
-        res = await db.execute(select(Order).where(Order.order_no == order_no))
+        res = await db.execute(
+            select(Order).where(Order.order_no == order_no).with_for_update()
+        )
         order = res.scalar_one_or_none()
 
         if not order:
             logger.error("[WEBHOOK] 未找到订单 order_no={}", order_no)
             return {"code": "FAIL", "message": "order not found"}
 
-        # 防止重复处理（幂等）
+        # 幂等：行锁内复查支付状态，已支付直接返回（并发的第二个回调会阻塞到此处再读到 paid）
         if order.payment_status == "paid":
             logger.info("[WEBHOOK] 订单已支付（幂等） order_no={}", order_no)
             return {"code": "SUCCESS", "message": "already paid"}

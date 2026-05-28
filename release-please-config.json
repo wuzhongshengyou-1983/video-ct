@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "package-name": "video-ct",
+  "changelog-sections": [
+    { "type": "feat",     "section": "✨ 新功能",   "hidden": false },
+    { "type": "fix",      "section": "🐛 Bug 修复", "hidden": false },
+    { "type": "perf",     "section": "⚡ 性能优化", "hidden": false },
+    { "type": "hotfix",   "section": "🔥 紧急修复", "hidden": false },
+    { "type": "refactor", "section": "♻️ 重构",     "hidden": false },
+    { "type": "docs",     "section": "📝 文档",     "hidden": true  },
+    { "type": "chore",    "section": "🔧 维护",     "hidden": true  },
+    { "type": "ci",       "section": "👷 CI",       "hidden": true  },
+    { "type": "test",     "section": "✅ 测试",      "hidden": true  }
+  ],
+  "extra-files": [
+    "apps/h5/package.json",
+    "apps/admin/package.json",
+    "apps/consultant/package.json"
+  ]
+}

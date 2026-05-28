@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Header, Query
 from fastapi.responses import RedirectResponse
 from loguru import logger
 
 from app.config import settings
-from app.core.exceptions import UnauthorizedError
+from app.core.exceptions import RateLimitedError, UnauthorizedError
+from app.core.rate_limit import check_otp_rate_limit
 from app.deps import DbSession, CurrentUser
 from app.schemas.auth import (
     PhoneOTPRequest, PhoneOTPVerify, TokenResponse, WechatLoginRequest
@@ -21,9 +22,15 @@ router = APIRouter()
 
 @router.post("/otp/send")
 async def send_otp(payload: PhoneOTPRequest):
-    """发送手机验证码（开发模式 dev_code 字段直接返回，生产去掉）."""
+    """发送手机验证码 · 手机号维度限流 3/min+10/h；dev_code 仅非生产返回."""
+    allowed, retry_after = await check_otp_rate_limit(payload.phone)
+    if not allowed:
+        raise RateLimitedError("验证码发送过于频繁，请稍后再试", retry_after_sec=retry_after)
     code = await auth_service.send_otp(payload.phone)
-    return {"sent": True, "dev_code": code}
+    resp: dict = {"sent": True}
+    if not settings.is_production:
+        resp["dev_code"] = code
+    return resp
 
 
 @router.post("/otp/verify", response_model=TokenResponse)
@@ -35,6 +42,17 @@ async def verify_otp(payload: PhoneOTPVerify, db: DbSession):
     )
     token = auth_service.issue_token(user)
     return TokenResponse(**token, is_new_user=is_new)
+
+
+@router.post("/logout")
+async def logout(authorization: str | None = Header(default=None)):
+    """登出 · 把当前 access token 的 jti 写入吊销名单（无状态 JWT 主动失效）."""
+    from app.core.security import revoke_access_token
+
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        await revoke_access_token(token)
+    return {"ok": True}
 
 
 @router.post("/wechat/login", response_model=TokenResponse)

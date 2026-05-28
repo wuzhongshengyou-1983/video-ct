@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "视频 CT · 短视频博主诊断 + 对标 + 陪跑 SaaS",
+  "type": "module",
   "license": "MIT",
   "engines": {
     "node": ">=20",
@@ -20,7 +21,8 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r exec rm -rf node_modules dist .turbo",
-    "test:e2e": "npx playwright test --config tests/e2e/playwright.config.ts"
+    "test:e2e": "npx playwright test --config tests/e2e/playwright.config.ts",
+    "lint:commits": "commitlint --from HEAD~10 --to HEAD --verbose"
   },
   "lint-staged": {
     "*.{ts,vue}": [
@@ -32,6 +34,9 @@
     ]
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.0.1",
+    "@commitlint/config-conventional": "^21.0.1",
+    "danger": "^12.3.3",
     "typescript": "^5.6.3"
   }
 }
