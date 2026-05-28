@@ -94,7 +94,7 @@ export default defineConfig({
 
     // 编辑链接
     editLink: {
-      pattern: 'https://github.com/video-ct/video-ct/edit/main/apps/docs/:path',
+      pattern: 'https://github.com/video-ct/video-ct/edit/main/apps/open/:path',
       text: '在 GitHub 上编辑此页',
     },
 

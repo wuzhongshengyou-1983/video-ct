@@ -93,3 +93,17 @@ tests/e2e/node_modules/
 .eslintcache
 .stylelintcache
 *.local
+
+# ====================== Media (R27: 视频/音频不入仓, 走 docs/video-index.md 映射) ======================
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.mp3
+*.wav
+*.m4a
+*.aac
+
+# ====================== 交接二进制 (R27: 交接截图/压缩包不入仓, 本地保留) ======================
+docs/08-交接/*.zip
+docs/08-交接/*.png

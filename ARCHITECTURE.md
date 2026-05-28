@@ -11,7 +11,7 @@
 │  四个端                                                                │
 ├──────────────────────┬───────────────────────────────────────────────┤
 │ ① C 端 H5            │ ② 顾问端        │ ③ 运营端     │ ④ 开放端      │
-│ apps/h5              │ apps/consultant │ apps/admin   │ apps/docs    │
+│ apps/h5              │ apps/consultant │ apps/admin   │ apps/open    │
 │ Vue3+Vant            │ Vue3+Antd Pro   │ Vue3+Antd Pro│ VitePress    │
 └──────────┬───────────┴────────┬────────┴──────┬───────┴──────┬───────┘
            │                    │               │              │
@@ -115,4 +115,4 @@ audit_logs             审计日志
 | 联调 | Docker Compose（PG/Redis/Milvus） |
 | 测试 | 单台 ECS（4c8g）+ RDS PostgreSQL |
 | 生产 MVP | 2 台 ECS + RDS + OSS |
-| 生产规模化 | K8s 集群（详见 `docs/strategy/15_技术栈与API全清单.md`）|
+| 生产规模化 | K8s 集群（详见 `docs/01-战略/15-技术栈与API全清单.md`）|

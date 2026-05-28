@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>火眼金睛 · 内部上线方案 v1.0</title>
+<style>
+  :root {
+    --amber: #f59e0b;
+    --amber-dim: rgba(245,158,11,0.12);
+    --amber-glow: rgba(245,158,11,0.25);
+    --surface: #0f172a;
+    --surface-card: rgba(255,255,255,0.05);
+    --surface-raised: rgba(255,255,255,0.08);
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --success: #30d158;
+    --danger: #ff453a;
+    --warning: #ff9f0a;
+    --info: #64d2ff;
+    --border: rgba(255,255,255,0.08);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--surface); color: var(--text); font-family: -apple-system, 'PingFang SC', sans-serif; line-height: 1.7; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  /* Header */
+  .hero { text-align: center; padding: 60px 0 40px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+  .hero h1 { font-size: 32px; font-weight: 700; background: linear-gradient(135deg, var(--amber), #fde68a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+  .hero p { color: var(--text-muted); font-size: 15px; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; margin: 4px; }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-glow); }
+  .badge-green { background: rgba(48,209,88,0.12); color: var(--success); border: 1px solid rgba(48,209,88,0.25); }
+  .badge-red { background: rgba(255,69,58,0.12); color: var(--danger); border: 1px solid rgba(255,69,58,0.25); }
+  .badge-blue { background: rgba(100,210,255,0.12); color: var(--info); border: 1px solid rgba(100,210,255,0.25); }
+
+  /* Section */
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 20px; font-weight: 700; color: var(--amber); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--amber-dim); display: flex; align-items: center; gap: 10px; }
+  .section-title span { font-size: 22px; }
+
+  /* Card */
+  .card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+  /* Pipeline */
+  .pipeline { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 20px 0; }
+  .pipe-step { flex: 0 0 auto; width: 150px; }
+  .pipe-box { background: var(--surface-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; font-size: 12px; }
+  .pipe-box .icon { font-size: 22px; margin-bottom: 6px; }
+  .pipe-box .name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .pipe-box .sub { color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+  .pipe-arrow { display: flex; align-items: center; padding: 0 4px; color: var(--amber); font-size: 18px; flex-shrink: 0; }
+  .pipe-box.amber { border-color: var(--amber-glow); background: var(--amber-dim); }
+  .pipe-box.green { border-color: rgba(48,209,88,0.25); background: rgba(48,209,88,0.08); }
+  .pipe-box.blue { border-color: rgba(100,210,255,0.25); background: rgba(100,210,255,0.08); }
+  .pipe-box.red { border-color: rgba(255,69,58,0.25); background: rgba(255,69,58,0.08); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 13.5px; }
+  th { background: var(--surface-raised); color: var(--text-muted); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Code */
+  pre { background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; font-size: 12.5px; overflow-x: auto; color: #e2e8f0; margin: 10px 0; font-family: 'SF Mono', Consolas, monospace; line-height: 1.6; }
+  code { background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', Consolas, monospace; }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; }
+  .checklist li:last-child { border-bottom: none; }
+  .check { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 5px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .check.done { background: var(--success); border-color: var(--success); color: white; }
+  .check.warn { background: var(--warning); border-color: var(--warning); color: white; }
+  .check.todo { border-color: var(--amber); }
+
+  /* Status indicator */
+  .status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 10px; border-radius: 999px; }
+  .status.done { background: rgba(48,209,88,0.12); color: var(--success); }
+  .status.todo { background: var(--amber-dim); color: var(--amber); }
+  .status.block { background: rgba(255,69,58,0.12); color: var(--danger); }
+  .status.skip { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* Phase */
+  .phase { display: flex; gap: 20px; margin-bottom: 24px; }
+  .phase-num { width: 36px; height: 36px; border-radius: 50%; background: var(--amber-dim); border: 1px solid var(--amber-glow); color: var(--amber); font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .phase-body { flex: 1; }
+  .phase-title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .phase-desc { color: var(--text-muted); font-size: 13.5px; margin-bottom: 12px; }
+
+  /* Arch diagram */
+  .arch { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 20px; font-family: 'SF Mono', Consolas, monospace; font-size: 12.5px; line-height: 1.8; color: #cbd5e1; overflow-x: auto; }
+  .arch .highlight { color: var(--amber); font-weight: 600; }
+  .arch .green { color: var(--success); }
+  .arch .blue { color: var(--info); }
+  .arch .red { color: var(--danger); }
+  .arch .muted { color: #475569; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  p { margin-bottom: 10px; font-size: 14px; color: var(--text-muted); }
+  .text-white { color: var(--text); }
+  .mt-8 { margin-top: 8px; }
+  .mb-0 { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="hero">
+    <h1>🔥 火眼金睛 · 内部上线方案</h1>
+    <p>video-ct 项目 · 内部验证版 · 2026-05-28</p>
+    <div style="margin-top: 16px;">
+      <span class="badge badge-amber">邮箱登录替代微信/短信</span>
+      <span class="badge badge-red">跳过支付模块</span>
+      <span class="badge badge-green">跑通核心诊断链路</span>
+      <span class="badge badge-blue">内部验证用途</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 一、项目全景链路 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>🗺</span> 一、完整系统链路（用户视角）</div>
+
+    <div class="card">
+      <div class="card-title">1.1 用户全链路 — 从注册到报告</div>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-box amber"><div class="icon">✉️</div><div class="name">邮箱注册</div><div class="sub">邮箱+密码<br>内部跳过验证</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">🔑</div><div class="name">登录获取JWT</div><div class="sub">access_token<br>7天有效期</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box green"><div class="icon">🎬</div><div class="name">提交视频</div><div class="sub">粘贴链接<br>或上传文件</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">⚙️</div><div class="name">后台处理</div><div class="sub">Celery异步<br>~2-5分钟</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box blue"><div class="icon">📊</div><div class="name">查看报告</div><div class="sub">6维18点位<br>诊断结果</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">📈</div><div class="name">成长档案</div><div class="sub">历史对比<br>改善追踪</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">🎯</div><div class="name">找对标</div><div class="sub">赛道TOP10<br>差距分析</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">1.2 诊断核心处理链路（技术层）</div>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-box amber"><div class="icon">🌐</div><div class="name">H5前端</div><div class="sub">Vue3+Vant<br>:5173</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">🚪</div><div class="name">Nginx</div><div class="sub">反向代理<br>:80</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box green"><div class="icon">⚡</div><div class="name">FastAPI</div><div class="sub">Python后端<br>:8000</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">📋</div><div class="name">Celery</div><div class="sub">异步任务队列<br>Redis broker</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box blue"><div class="icon">🎥</div><div class="name">FFmpeg</div><div class="sub">视频抽帧<br>ffprobe分析</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box"><div class="icon">👁</div><div class="name">OCR+ASR</div><div class="sub">PaddleOCR<br>Whisper</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box amber"><div class="icon">🤖</div><div class="name">LLM分析</div><div class="sub">SiliconFlow<br>DeepSeek/Qwen</div></div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><div class="pipe-box green"><div class="icon">📝</div><div class="name">生成报告</div><div class="sub">写入PostgreSQL<br>WebSocket推送</div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">1.3 Docker服务依赖图</div>
+      <div class="arch">
+<span class="highlight">用户请求</span>
+    │
+    ▼
+<span class="highlight">Nginx :80/443</span>                    ← 统一入口
+    │
+    ├─► <span class="green">FastAPI :8000</span>               ← 业务API
+    │       │
+    │       ├─ PostgreSQL :5432      ← 主数据库（52张表）
+    │       ├─ Redis :6379           ← 缓存 + Celery Broker
+    │       ├─ MinIO :9000           ← 视频/图片对象存储
+    │       └─ WebSocket ws://       ← 实时推送诊断进度
+    │
+    ├─► <span class="blue">Celery Worker</span>               ← 异步诊断任务
+    │       │
+    │       ├─ FFmpeg                ← 视频抽帧 + ffprobe
+    │       ├─ PaddleOCR :8868       ← 文字识别
+    │       ├─ Whisper Large v3      ← 语音转文字
+    │       └─ <span class="amber">SiliconFlow API</span>      ← LLM分析 (外网)
+    │
+    ├─► <span class="green">H5 前端 :5173</span>               ← Vue3+Vant C端
+    ├─► Admin :5174                  ← 管理后台
+    └─► Consultant :5175             ← 顾问后台
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 二、各功能模块链路 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>🔗</span> 二、各功能模块详细链路</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔐 认证模块（改为邮箱登录）</div>
+        <table>
+          <tr><th>动作</th><th>API</th><th>说明</th></tr>
+          <tr><td>注册</td><td><code>POST /api/v1/auth/register</code></td><td>邮箱+密码，bcrypt哈希</td></tr>
+          <tr><td>登录</td><td><code>POST /api/v1/auth/login</code></td><td>返回 access_token (7d)</td></tr>
+          <tr><td>刷新</td><td><code>POST /api/v1/auth/refresh</code></td><td>无感续期</td></tr>
+          <tr><td>登出</td><td><code>POST /api/v1/auth/logout</code></td><td>Token黑名单</td></tr>
+          <tr><td>我的信息</td><td><code>GET /api/v1/auth/me</code></td><td>Bearer JWT</td></tr>
+        </table>
+        <div style="background: var(--amber-dim); border: 1px solid var(--amber-glow); border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 12.5px; color: var(--amber);">
+          ⚠️ 需要改动：<br>
+          · auth_service.py 加邮箱+密码注册/登录方法<br>
+          · 前端登录页加邮箱表单<br>
+          · 屏蔽 send_sms/verify_otp 两个端点（不删除）
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 订阅配额模块（内部跳过支付）</div>
+        <table>
+          <tr><th>动作</th><th>API</th><th>内部处理</th></tr>
+          <tr><td>查配额</td><td><code>GET /api/v1/subscriptions/usage</code></td><td>直接查询</td></tr>
+          <tr><td>创建订单</td><td><code>POST /api/v1/subscriptions/order</code></td><td><span class="status skip">跳过支付</span></td></tr>
+          <tr><td>手动开通</td><td>数据库直接INSERT</td><td>内部测试用</td></tr>
+        </table>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 12.5px; color: var(--text-muted);">
+          内部上线方案：<br>
+          直接在 subscriptions 表插入 PRO 记录，绕过支付验证。<br>
+          或修改 config.py 加 BYPASS_PAYMENT=true 环境变量。
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎬 诊断完整链路（最核心模块）</div>
+      <table>
+        <tr><th>步骤</th><th>动作</th><th>API/代码</th><th>技术</th><th>预计耗时</th></tr>
+        <tr>
+          <td><span class="badge badge-amber">1</span></td>
+          <td>提交视频</td>
+          <td><code>POST /api/v1/diagnoses/submit</code></td>
+          <td>接收URL或文件，创建任务记录，入Celery队列</td>
+          <td>&lt; 1s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">2</span></td>
+          <td>下载/预处理</td>
+          <td>Celery Worker<br><code>diagnosis_service.py</code></td>
+          <td>yt-dlp / requests 下载视频到临时目录</td>
+          <td>10-30s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">3</span></td>
+          <td>技术参数提取</td>
+          <td><code>diagnosis_service.py:424</code></td>
+          <td>ffprobe → 分辨率/码率/FPS/时长/音频轨 → 注入Prompt</td>
+          <td>2-5s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">4</span></td>
+          <td>视频抽帧</td>
+          <td>FFmpeg</td>
+          <td>每秒1帧 + 关键帧，存MinIO</td>
+          <td>10-30s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">5</span></td>
+          <td>文字识别OCR</td>
+          <td>PaddleOCR:8868</td>
+          <td>封面/字幕文字提取</td>
+          <td>5-15s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">6</span></td>
+          <td>语音转文字ASR</td>
+          <td>Whisper Large v3</td>
+          <td>全片语音转文字，提取话术内容</td>
+          <td>30-120s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">7</span></td>
+          <td>视觉理解</td>
+          <td>Qwen3-VL-32B<br>via SiliconFlow</td>
+          <td>构图/色调/人物/场景分析</td>
+          <td>15-30s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">8</span></td>
+          <td>LLM 6维诊断</td>
+          <td>17个AI Agents<br>pick_model路由</td>
+          <td>DeepSeek-V3.2/Qwen2.5-72B → 6维18点位评分+建议</td>
+          <td>30-60s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">9</span></td>
+          <td>写入结果</td>
+          <td><code>POST /api/v1/diagnoses/{id}/report</code></td>
+          <td>结构化JSON写PostgreSQL，发Kafka事件</td>
+          <td>&lt; 1s</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">10</span></td>
+          <td>推送用户</td>
+          <td>WebSocket<br><code>ws.py</code></td>
+          <td>diagnosis.completed → 前端接收 → 显示报告</td>
+          <td>实时</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">✅</span></td>
+          <td>查看报告</td>
+          <td><code>GET /api/v1/diagnoses/{id}/report</code></td>
+          <td>6维雷达图+建议列表+病灶定位+数据血缘图</td>
+          <td>—</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎯 找对标链路</div>
+        <table>
+          <tr><th>动作</th><th>API</th></tr>
+          <tr><td>赛道列表</td><td><code>GET /api/v1/benchmarks/tracks</code></td></tr>
+          <tr><td>赛道TOP10</td><td><code>GET /api/v1/benchmarks/top10/{track}</code></td></tr>
+          <tr><td>差距计算</td><td><code>GET /api/v1/benchmarks/{user_id}/gap</code></td></tr>
+          <tr><td>差距趋势</td><td><code>GET /api/v1/benchmarks/{user_id}/trend</code></td></tr>
+        </table>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+          内部测试：需要数据库中有种子对标数据，<br>否则返回空列表（不报错）
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📈 历史/成长档案链路</div>
+        <table>
+          <tr><th>动作</th><th>API</th></tr>
+          <tr><td>诊断历史</td><td><code>GET /api/v1/diagnoses/</code></td></tr>
+          <tr><td>诊断详情</td><td><code>GET /api/v1/diagnoses/{id}</code></td></tr>
+          <tr><td>报告反馈</td><td><code>POST /api/v1/diagnoses/{id}/feedback</code></td></tr>
+          <tr><td>成长档案</td><td><code>GET /api/v1/archive/{user_id}</code></td></tr>
+          <tr><td>成长曲线</td><td><code>GET /api/v1/archive/{user_id}/curve</code></td></tr>
+        </table>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+          ⚠️ videoTitle 为空 bug：<br>
+          历史页显示「诊断 #id」，需修复 buildDiagReport
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 三、内部上线步骤 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>🚀</span> 三、内部上线执行步骤</div>
+
+    <div class="phase">
+      <div class="phase-num">1</div>
+      <div class="phase-body">
+        <div class="phase-title">获取代码 · 等对方提供</div>
+        <div class="phase-desc">按《交接材料清单》要求对方操作</div>
+        <pre># 方式A：clone
+git clone https://github.com/wuzhongshengyou-1983/video-ct.git
+cd video-ct
+
+# 方式B：解压zip
+unzip video-ct-XXXXXXXX.zip && cd video-ct</pre>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">2</div>
+      <div class="phase-body">
+        <div class="phase-title">配置最小 .env（内部版）</div>
+        <div class="phase-desc">只填必需的环境变量，支付/短信全部跳过</div>
+        <pre># services/api/.env.local（内部测试用）
+
+# ─── 数据库 ───────────────────────────────────
+DATABASE_URL=postgresql://postgres:password@localhost:5432/video_ct
+REDIS_URL=redis://localhost:6379/0
+
+# ─── 安全 ─────────────────────────────────────
+SECRET_KEY=内部测试用随机字符串_至少32位
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7天
+
+# ─── AI 模型（必须） ─────────────────────────
+SILICONFLOW_API_KEY=填入SiliconFlow的Key
+DEEPSEEK_API_KEY=填入DeepSeek的Key（fallback用）
+
+# ─── MinIO对象存储 ────────────────────────────
+MINIO_ENDPOINT=localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_SECURE=false
+MINIO_BUCKET=video-ct
+
+# ─── 内部模式开关 ─────────────────────────────
+BYPASS_PAYMENT=true          # 跳过支付验证
+EMAIL_VERIFY_REQUIRED=false  # 邮箱无需验证
+SMS_ENABLED=false            # 禁用短信
+
+# ─── CORS（本地开发） ────────────────────────
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
+
+# ─── 以下生产才需要，内部留空 ─────────────────
+WECHAT_APP_ID=
+WECHAT_APP_SECRET=
+WECHAT_MCH_ID=
+WECHAT_API_KEY=
+ALIYUN_ACCESS_KEY_ID=
+ALIYUN_ACCESS_KEY_SECRET=</pre>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">3</div>
+      <div class="phase-body">
+        <div class="phase-title">修改代码：加邮箱登录（约2小时工作量）</div>
+        <div class="phase-desc">在现有认证体系上增加邮箱+密码方式，不删除原微信登录代码</div>
+        <pre># services/api/app/services/auth_service.py
+# 在现有文件中追加以下方法：
+
+async def register_by_email(email: str, password: str, db: Session) -> User:
+    """邮箱注册（内部测试用）"""
+    if db.query(User).filter(User.email == email).first():
+        raise BizException("EMAIL_EXISTS", "邮箱已注册")
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    user = User(email=email, password_hash=hashed, nickname=email.split("@")[0])
+    db.add(user)
+    db.commit()
+    return user
+
+async def login_by_email(email: str, password: str, db: Session) -> str:
+    """邮箱登录，返回 access_token"""
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+        raise BizException("INVALID_CREDENTIALS", "邮箱或密码错误")
+    return create_access_token({"sub": str(user.id), "email": user.email})</pre>
+
+        <pre># services/api/app/routers/auth.py
+# 追加两个路由：
+
+@router.post("/register/email")
+async def register_email(data: EmailRegisterRequest, db: Session = Depends(get_db)):
+    user = await auth_service.register_by_email(data.email, data.password, db)
+    token = await auth_service.login_by_email(data.email, data.password, db)
+    return {"access_token": token, "user_id": user.id}
+
+@router.post("/login/email")
+async def login_email(data: EmailLoginRequest, db: Session = Depends(get_db)):
+    token = await auth_service.login_by_email(data.email, data.password, db)
+    return {"access_token": token}</pre>
+
+        <pre># apps/h5/src/views/Login.vue
+# 在现有登录页追加邮箱登录表单（与微信登录并列）：
+# &lt;van-tabs&gt;
+#   &lt;van-tab title="微信登录"&gt;... 原有代码 ...&lt;/van-tab&gt;
+#   &lt;van-tab title="邮箱登录"&gt;
+#     &lt;van-field v-model="email" placeholder="邮箱" /&gt;
+#     &lt;van-field v-model="password" type="password" placeholder="密码" /&gt;
+#     &lt;van-button @click="loginByEmail"&gt;登录&lt;/van-button&gt;
+#   &lt;/van-tab&gt;
+# &lt;/van-tabs&gt;</pre>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">4</div>
+      <div class="phase-body">
+        <div class="phase-title">启动 Docker 服务</div>
+        <div class="phase-desc">所有服务通过 docker-compose 一键拉起</div>
+        <pre># 1. 锁定Python依赖（1分钟）
+cd services/api && pip freeze > requirements.lock && cd ../..
+
+# 2. 拉起基础设施
+docker-compose up -d postgres redis minio
+
+# 3. 等待数据库就绪，执行迁移
+sleep 10
+docker-compose run --rm api alembic upgrade head
+
+# 4. 拉起AI处理服务
+docker-compose up -d whisper paddleocr celery-worker
+
+# 5. 拉起业务服务
+docker-compose up -d api nginx
+
+# 6. 拉起前端（开发模式）
+cd apps/h5 && npm install && npm run dev &
+# 访问 http://localhost:5173
+
+# 7. 健康检查
+curl http://localhost:8000/healthz
+curl http://localhost:8000/readyz</pre>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">5</div>
+      <div class="phase-body">
+        <div class="phase-title">数据初始化（种子数据）</div>
+        <div class="phase-desc">插入测试账号 + PRO 权限 + 基础对标数据</div>
+        <pre># 创建测试用户并授予PRO权限（直接SQL）
+INSERT INTO users (email, password_hash, nickname, created_at)
+VALUES ('test@internal.com', '&lt;bcrypt_hash&gt;', '内部测试账号', NOW());
+
+INSERT INTO subscriptions (user_id, plan, status, started_at, expires_at)
+SELECT id, 'PRO', 'active', NOW(), NOW() + INTERVAL '1 year'
+FROM users WHERE email = 'test@internal.com';
+
+-- 插入测试赛道（让找对标有数据）
+INSERT INTO tracks (name, category) VALUES
+  ('美妆护肤', '生活'),
+  ('美食探店', '生活'),
+  ('科技数码', '科技'),
+  ('职场干货', '知识'),
+  ('搞笑剧情', '娱乐');</pre>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">6</div>
+      <div class="phase-body">
+        <div class="phase-title">链路验证清单</div>
+        <div class="phase-desc">按顺序逐项验证，每项通过后打勾</div>
+        <ul class="checklist">
+          <li><div class="check todo">□</div><div><strong>邮箱注册</strong>：POST /api/v1/auth/register/email，返回 access_token</div></li>
+          <li><div class="check todo">□</div><div><strong>邮箱登录</strong>：POST /api/v1/auth/login/email，返回 JWT</div></li>
+          <li><div class="check todo">□</div><div><strong>获取用户信息</strong>：GET /api/v1/auth/me，返回用户档案</div></li>
+          <li><div class="check todo">□</div><div><strong>配额查询</strong>：GET /api/v1/subscriptions/usage，PRO用户显示4次/月</div></li>
+          <li><div class="check todo">□</div><div><strong>提交视频</strong>：POST /api/v1/diagnoses/submit，传入抖音/B站链接，任务创建成功</div></li>
+          <li><div class="check todo">□</div><div><strong>WebSocket连接</strong>：前端能接收实时进度推送</div></li>
+          <li><div class="check todo">□</div><div><strong>诊断完成</strong>：等待2-5分钟，状态变为 completed</div></li>
+          <li><div class="check todo">□</div><div><strong>查看报告</strong>：GET /api/v1/diagnoses/{id}/report，6维数据齐全</div></li>
+          <li><div class="check todo">□</div><div><strong>历史记录</strong>：GET /api/v1/diagnoses/，列表显示，videoTitle非空</div></li>
+          <li><div class="check todo">□</div><div><strong>找对标</strong>：GET /api/v1/benchmarks/tracks，赛道列表加载</div></li>
+          <li><div class="check todo">□</div><div><strong>成长档案</strong>：GET /api/v1/archive/{user_id}，档案页正常</div></li>
+          <li><div class="check todo">□</div><div><strong>H5完整流程</strong>：用浏览器走完注册→登录→提交→查看报告全流程</div></li>
+          <li><div class="check todo">□</div><div><strong>Grafana监控</strong>：http://localhost:3000 仪表盘有数据</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 四、改动清单 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>✏️</span> 四、代码改动清单（最小集）</div>
+
+    <table>
+      <tr>
+        <th>优先级</th>
+        <th>文件</th>
+        <th>改动内容</th>
+        <th>工作量</th>
+        <th>状态</th>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">P0</span></td>
+        <td><code>services/api/app/services/auth_service.py</code></td>
+        <td>增加 register_by_email / login_by_email 方法（bcrypt哈希）</td>
+        <td>30分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">P0</span></td>
+        <td><code>services/api/app/routers/auth.py</code></td>
+        <td>增加 POST /register/email + POST /login/email 两个路由</td>
+        <td>15分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">P0</span></td>
+        <td><code>apps/h5/src/views/Login.vue</code></td>
+        <td>在登录页追加邮箱登录Tab（不删除微信登录）</td>
+        <td>30分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">P0</span></td>
+        <td><code>services/api/app/main.py:100</code></td>
+        <td>CORS_ORIGINS 从 * 改为明确的域名列表</td>
+        <td>5分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-amber">P1</span></td>
+        <td><code>services/api/app/services/diagnosis_service.py</code></td>
+        <td>修复 buildDiagReport 中 videoTitle 为空的 bug</td>
+        <td>30分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-amber">P1</span></td>
+        <td><code>services/api/requirements.txt</code></td>
+        <td>执行 pip freeze &gt; requirements.lock 锁定依赖</td>
+        <td>1分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-amber">P1</span></td>
+        <td><code>apps/h5/src/views/video-ct/PracticePlan.vue</code></td>
+        <td>难度徽章浅色底改为半透明暗色方案（暗色主题极刺眼）</td>
+        <td>20分钟</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">P2</span></td>
+        <td>infra/migrations/ 新文件</td>
+        <td>Phase 0：5张新表 + 2列 ALTER（accounts/user_events等）</td>
+        <td>2小时</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">P2</span></td>
+        <td><code>services/api/app/routers/events.py</code> (新建)</td>
+        <td>/api/v1/events/track 行为事件收集端点</td>
+        <td>2小时</td>
+        <td><span class="status todo">待做</span></td>
+      </tr>
+      <tr>
+        <td><span class="status skip">跳过</span></td>
+        <td>payment_service.py</td>
+        <td>支付模块，内部上线不需要</td>
+        <td>—</td>
+        <td><span class="status skip">跳过</span></td>
+      </tr>
+      <tr>
+        <td><span class="status skip">跳过</span></td>
+        <td>auth_service.py:34</td>
+        <td>短信验证码mock，内部用邮箱登录替代</td>
+        <td>—</td>
+        <td><span class="status skip">跳过</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 五、H5页面路由全图 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>📱</span> 五、H5 全页面路由与功能状态</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">核心路由（video-ct模块）</div>
+        <table>
+          <tr><th>路由</th><th>页面</th><th>状态</th></tr>
+          <tr><td><code>/</code></td><td>首页 Home</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/login</code></td><td>登录页</td><td><span class="status todo">⚠️ 需加邮箱</span></td></tr>
+          <tr><td><code>/diagnose</code></td><td>提交诊断</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/diagnose/:id</code></td><td>诊断进度</td><td><span class="status done">✅ WebSocket</span></td></tr>
+          <tr><td><code>/diagnose/:id/report</code></td><td>CT报告</td><td><span class="status done">✅ 6维完整</span></td></tr>
+          <tr><td><code>/history</code></td><td>历史记录</td><td><span class="status todo">⚠️ title bug</span></td></tr>
+          <tr><td><code>/growth</code></td><td>成长档案</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/subscribe</code></td><td>订阅页面</td><td><span class="status skip">跳过支付</span></td></tr>
+          <tr><td><code>/me</code></td><td>个人中心</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/practice</code></td><td>修炼计划</td><td><span class="status todo">⚠️ 徽章颜色</span></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">火眼金睛模块（fire-eye）</div>
+        <table>
+          <tr><th>路由</th><th>页面</th><th>状态</th></tr>
+          <tr><td><code>/fire-eye</code></td><td>火眼首页</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/fire-eye/diagnose</code></td><td>诊断页</td><td><span class="status done">✅ 已重设计</span></td></tr>
+          <tr><td><code>/fire-eye/gene</code></td><td>基因访谈</td><td><span class="status done">✅ 55行业</span></td></tr>
+          <tr><td><code>/fire-eye/history</code></td><td>历史记录</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/fire-eye/signal</code></td><td>信号中心</td><td><span class="status done">✅ 完整</span></td></tr>
+          <tr><td><code>/fire-eye/settings</code></td><td>信号设置</td><td><span class="status done">✅ 完整</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 六、内部上线最小服务矩阵 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>🐳</span> 六、内部上线最小 Docker 服务矩阵</div>
+
+    <table>
+      <tr>
+        <th>服务</th>
+        <th>端口</th>
+        <th>必需性</th>
+        <th>内存预估</th>
+        <th>说明</th>
+      </tr>
+      <tr>
+        <td><code>postgres</code></td>
+        <td>5432</td>
+        <td><span class="badge badge-red">必须</span></td>
+        <td>~256MB</td>
+        <td>主数据库，52张表</td>
+      </tr>
+      <tr>
+        <td><code>redis</code></td>
+        <td>6379</td>
+        <td><span class="badge badge-red">必须</span></td>
+        <td>~64MB</td>
+        <td>缓存 + Celery Broker</td>
+      </tr>
+      <tr>
+        <td><code>minio</code></td>
+        <td>9000/9001</td>
+        <td><span class="badge badge-red">必须</span></td>
+        <td>~128MB</td>
+        <td>视频帧/截图存储</td>
+      </tr>
+      <tr>
+        <td><code>api</code> (FastAPI)</td>
+        <td>8000</td>
+        <td><span class="badge badge-red">必须</span></td>
+        <td>~256MB</td>
+        <td>业务API，含WebSocket</td>
+      </tr>
+      <tr>
+        <td><code>celery-worker</code></td>
+        <td>—</td>
+        <td><span class="badge badge-red">必须</span></td>
+        <td>~512MB</td>
+        <td>异步诊断任务处理</td>
+      </tr>
+      <tr>
+        <td><code>nginx</code></td>
+        <td>80</td>
+        <td><span class="badge badge-red">必须</span></td>
+        <td>~32MB</td>
+        <td>反向代理，静态资源</td>
+      </tr>
+      <tr>
+        <td><code>whisper</code></td>
+        <td>9000（内部）</td>
+        <td><span class="badge badge-amber">推荐</span></td>
+        <td>~2GB (Large v3)</td>
+        <td>语音转文字，无则降级</td>
+      </tr>
+      <tr>
+        <td><code>paddleocr</code></td>
+        <td>8868</td>
+        <td><span class="badge badge-amber">推荐</span></td>
+        <td>~1GB</td>
+        <td>文字识别，无则降级</td>
+      </tr>
+      <tr>
+        <td><code>grafana</code></td>
+        <td>3000</td>
+        <td><span class="badge badge-blue">可选</span></td>
+        <td>~256MB</td>
+        <td>3个监控面板（CEO/增长/产品）</td>
+      </tr>
+      <tr>
+        <td><code>kafka</code></td>
+        <td>9092</td>
+        <td><span class="badge badge-blue">可选</span></td>
+        <td>~512MB</td>
+        <td>事件总线，默认KAFKA_ENABLED=False</td>
+      </tr>
+      <tr>
+        <td>付款服务</td>
+        <td>—</td>
+        <td><span class="status skip">跳过</span></td>
+        <td>—</td>
+        <td>内部上线不启动</td>
+      </tr>
+    </table>
+    <p class="mt-8">最小内存需求：约 <strong class="text-white">4-5GB RAM</strong>（含Whisper + PaddleOCR）。不含AI模型可降低到2GB。</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 七、上线前检查清单 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>✅</span> 七、上线前检查清单（GoLive Gate）</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔴 必须通过（任一不过 = 不能上线）</div>
+        <ul class="checklist">
+          <li><div class="check todo">□</div><div>邮箱注册/登录链路跑通</div></li>
+          <li><div class="check todo">□</div><div>提交视频 → 诊断完成 → 报告可查看（端到端）</div></li>
+          <li><div class="check todo">□</div><div>WebSocket实时推送正常</div></li>
+          <li><div class="check todo">□</div><div>/healthz 和 /readyz 返回200</div></li>
+          <li><div class="check todo">□</div><div>PostgreSQL 迁移全部通过（alembic current = head）</div></li>
+          <li><div class="check todo">□</div><div>SiliconFlow API连通（测试一次LLM调用成功）</div></li>
+          <li><div class="check todo">□</div><div>MinIO存储正常（上传/下载一张图片）</div></li>
+          <li><div class="check todo">□</div><div>CORS配置正确（H5能访问API，无CORS报错）</div></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🟡 建议通过（不过可带着风险上线）</div>
+        <ul class="checklist">
+          <li><div class="check todo">□</div><div>videoTitle 不为空（历史页显示正常）</div></li>
+          <li><div class="check todo">□</div><div>PracticePlan 难度徽章颜色正常（暗色主题）</div></li>
+          <li><div class="check todo">□</div><div>3个设备尺寸（375/390/430px）页面不崩溃</div></li>
+          <li><div class="check todo">□</div><div>Grafana仪表盘有数据</div></li>
+          <li><div class="check todo">□</div><div>Celery任务失败有重试机制</div></li>
+          <li><div class="check todo">□</div><div>Admin后台能登录查看用户</div></li>
+          <li><div class="check todo">□</div><div>找对标页面有数据（至少1个赛道）</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- 八、后续计划 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title"><span>📅</span> 八、内部上线后 → 正式上线路径</div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title" style="color: var(--success);">内部上线（当前目标）</div>
+        <ul class="checklist">
+          <li><div class="check todo">□</div><div>邮箱登录跑通</div></li>
+          <li><div class="check todo">□</div><div>AI诊断核心链路验证</div></li>
+          <li><div class="check todo">□</div><div>内部团队使用测试</div></li>
+          <li><div class="check todo">□</div><div>bug收集与修复</div></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color: var(--warning);">准商业上线</div>
+        <ul class="checklist">
+          <li><div class="check todo">□</div><div>注册个体工商户</div></li>
+          <li><div class="check todo">□</div><div>接入短信验证（Spug）</div></li>
+          <li><div class="check todo">□</div><div>配置 openo.vip SSL</div></li>
+          <li><div class="check todo">□</div><div>接入微信小程序登录</div></li>
+          <li><div class="check todo">□</div><div>ICP备案完成</div></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color: var(--danger);">正式商业上线</div>
+        <ul class="checklist">
+          <li><div class="check todo">□</div><div>微信支付接入</div></li>
+          <li><div class="check todo">□</div><div>支付闭环验证</div></li>
+          <li><div class="check todo">□</div><div>用户协议/隐私政策上线</div></li>
+          <li><div class="check todo">□</div><div>正式发布 PRO 产品</div></li>
+          <li><div class="check todo">□</div><div>首批30单目标</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+  <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px 0;">
+    火眼金睛 · 内部上线方案 v1.0 · 生成于 2026-05-28 · 仅供内部使用
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+# =============================================================================
+# Video CT · 生产环境变量（交接用 · 发送给 metafo333-hue）
+# 使用方法：放到 video-ct 项目根目录，重命名为 .env.prod
+# =============================================================================
+
+# ---------- 基础 ----------
+NODE_ENV=production
+LOG_LEVEL=info
+APP_NAME=video-ct
+APP_VERSION=0.1.0
+
+# ---------- 后端服务 ----------
+API_HOST=0.0.0.0
+API_PORT=8000
+API_BASE_URL=https://openo.vip
+JWT_SECRET=<待生成：openssl rand -hex 32>
+JWT_EXPIRE_MINUTES=10080
+
+# ---------- 数据库 ----------
+DATABASE_URL=postgresql+asyncpg://video_ct:<db-password>@localhost:5432/video_ct
+
+# ---------- Redis ----------
+REDIS_URL=redis://localhost:6379/0
+
+# ---------- AI 模型供应商 ----------
+DEEPSEEK_API_KEY=sk-2b25c82e21e54828baaf67f73114136f
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL_CHAT=deepseek-chat
+DEEPSEEK_MODEL_PRO=deepseek-v4-pro
+
+SILICONFLOW_API_KEY=sk-upalmkuwerzznhfshioxaplsqqonuluuxfckjdhoawushinv
+SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
+SILICONFLOW_MODEL_EMBEDDING=BAAI/bge-large-zh-v1.5
+SILICONFLOW_MODEL_RERANK=BAAI/bge-reranker-v2-m3
+SILICONFLOW_MODEL_VISION=Qwen/Qwen2-VL-72B-Instruct
+SILICONFLOW_MODEL_LLM_FALLBACK=Qwen/Qwen2.5-72B-Instruct
+
+# ---------- 微信生态（待提供）----------
+WECHAT_APP_ID=<微信开放平台AppID>
+WECHAT_APP_SECRET=<微信AppSecret>
+WECHAT_PAY_MCH_ID=<微信支付商户号>
+WECHAT_PAY_API_KEY=<微信支付API密钥>
+WECHAT_PAY_CERT_PATH=./secrets/wechat_pay_cert.pem
+
+# ---------- 短视频平台 OAuth（待提供）----------
+DOUYIN_CLIENT_KEY=<抖音开放平台ClientKey>
+DOUYIN_CLIENT_SECRET=<抖音ClientSecret>
+KUAISHOU_CLIENT_KEY=<快手开放平台ClientKey>
+KUAISHOU_CLIENT_SECRET=<快手ClientSecret>
+
+# ---------- 短信（待提供）----------
+ALIYUN_SMS_ACCESS_KEY=<阿里云AccessKey>
+ALIYUN_SMS_ACCESS_SECRET=<阿里云AccessSecret>
+ALIYUN_SMS_SIGN_NAME=视频CT
+ALIYUN_SMS_TEMPLATE_OTP=<阿里云短信模板编号>
+
+# ---------- 对象存储（待提供）----------
+OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
+OSS_ACCESS_KEY=<OSS AccessKey>
+OSS_SECRET_KEY=<OSS SecretKey>
+OSS_BUCKET=video-ct
+OSS_REGION=cn-hangzhou
+
+# ---------- 前端（H5）----------
+VITE_API_BASE_URL=https://openo.vip
+VITE_APP_NAME=视频CT
+VITE_ENABLE_MOCK=false
+
+# ---------- 业务参数 ----------
+FREE_MONTHLY_SCANS=3
+PRO_PRICE_CNY=99
+MAX_PRICE_CNY=499
+SINGLE_SCAN_PRICE_CNY=19
+REFERRER_REWARD_CNY=18
+REFERRER_DEDUCT_THRESHOLD=99
+
+# ---------- 风控 ----------
+RATE_LIMIT_PER_MINUTE=60
+MAX_UPLOAD_SIZE_MB=200

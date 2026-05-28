@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>移动端调试工具使用规范 v1.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', monospace, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.7; font-size: 14px; }
+
+  .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 32px 48px; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #f0f6fc; }
+  .header .meta { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .b-v { background: #1f6feb22; color: #58a6ff; border: 1px solid #1f6feb; }
+  .b-d { background: #3fb95022; color: #3fb950; border: 1px solid #238636; }
+  .b-r { background: #db616122; color: #f85149; border: 1px solid #b91c1c; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 48px 80px; }
+
+  /* TOC */
+  .toc { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; margin-bottom: 40px; }
+  .toc h3 { font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 5px; }
+  .toc a { color: #58a6ff; text-decoration: none; font-size: 13px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Sections */
+  h2 { font-size: 18px; font-weight: 700; color: #f0f6fc; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
+  h3 { font-size: 14px; font-weight: 700; color: #e6edf3; margin: 24px 0 10px; }
+  p { color: #8b949e; margin-bottom: 12px; }
+  strong { color: #e6edf3; }
+
+  /* Alert boxes */
+  .alert { border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+  .alert-red { background: #3d1a1a; border: 1px solid #7f1d1d; color: #fca5a5; }
+  .alert-yellow { background: #2d2510; border: 1px solid #78350f; color: #fde68a; }
+  .alert-green { background: #0f2a1a; border: 1px solid #14532d; color: #86efac; }
+  .alert-blue { background: #0d1f38; border: 1px solid #1e3a5f; color: #93c5fd; }
+  .alert-title { font-weight: 700; margin-bottom: 4px; display: block; }
+
+  /* Code blocks */
+  pre { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; color: #e6edf3; }
+  .code-comment { color: #8b949e; }
+  .code-key { color: #ff7b72; }
+  .code-str { color: #a5d6ff; }
+  .code-fn { color: #d2a8ff; }
+  .code-green { color: #7ee787; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: #161b22; padding: 10px 14px; text-align: left; color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; border: 1px solid #30363d; }
+  td { padding: 10px 14px; border: 1px solid #21262d; color: #c9d1d9; vertical-align: top; }
+  tr:nth-child(even) td { background: #0d1117; }
+  .td-green { color: #3fb950; font-weight: 600; }
+  .td-red { color: #f85149; }
+  .td-yellow { color: #e3b341; }
+
+  /* Step boxes */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step-num { background: #1f6feb; color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 700; color: #e6edf3; margin-bottom: 6px; }
+  .step-desc { font-size: 13px; color: #8b949e; }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 6px 0; font-size: 13px; color: #8b949e; display: flex; align-items: flex-start; gap: 8px; }
+  .checklist li::before { content: '□'; color: #30363d; font-size: 16px; flex-shrink: 0; }
+  .checklist li.must::before { content: '✅'; }
+  .checklist li.warn::before { content: '⚠️'; }
+  .checklist li.no::before { content: '🚫'; }
+
+  /* Workflow diagram */
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 14px; font-size: 12px; color: #e6edf3; }
+  .flow-arrow { color: #58a6ff; font-size: 18px; }
+  .flow-box.active { border-color: #1f6feb; background: #0d1f38; color: #58a6ff; }
+
+  footer { border-top: 1px solid #30363d; padding: 24px 48px; text-align: center; font-size: 11px; color: #484f58; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>移动端调试工具使用规范</h1>
+  <div class="meta">
+    <span class="badge b-v">v1.0</span>
+    <span class="badge b-d">适用：商业项目 + VSCode 开发</span>
+    <span class="badge b-d">工具：Responsively App + Eruda</span>
+    <span class="badge b-r">协议：AGPL-3.0 / MIT — 已审查</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <nav class="toc">
+    <h3>目录</h3>
+    <ol>
+      <li><a href="#overview">工具职责边界</a></li>
+      <li><a href="#responsively">Responsively App 使用规范</a></li>
+      <li><a href="#eruda">Eruda 使用规范</a></li>
+      <li><a href="#security">安全规范（商业项目强制）</a></li>
+      <li><a href="#workflow">日常开发工作流</a></li>
+      <li><a href="#checklist">上线前检查清单</a></li>
+      <li><a href="#faq">常见问题</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1. 工具职责 -->
+  <h2 id="overview">1. 工具职责边界</h2>
+  <p>两个工具解决<strong>完全不同的问题</strong>，不可互相替代。</p>
+
+  <table>
+    <tr>
+      <th></th>
+      <th>Responsively App</th>
+      <th>Eruda</th>
+    </tr>
+    <tr>
+      <td><strong>解决什么</strong></td>
+      <td>开发时看多设备布局</td>
+      <td>真机上调 bug / 查请求</td>
+    </tr>
+    <tr>
+      <td><strong>在哪跑</strong></td>
+      <td>你的电脑（VSCode 旁边）</td>
+      <td>用户/测试手机浏览器里</td>
+    </tr>
+    <tr>
+      <td><strong>协议</strong></td>
+      <td class="td-yellow">AGPL-3.0（开发工具使用安全）</td>
+      <td class="td-green">MIT（商用完全无限制）</td>
+    </tr>
+    <tr>
+      <td><strong>安装方式</strong></td>
+      <td>桌面 App（已安装）</td>
+      <td>npm 包 / CDN（一行代码）</td>
+    </tr>
+    <tr>
+      <td><strong>生产环境</strong></td>
+      <td class="td-green">无影响（仅开发机器使用）</td>
+      <td class="td-red">严禁进生产（见安全规范）</td>
+    </tr>
+  </table>
+
+  <!-- 2. Responsively -->
+  <h2 id="responsively">2. Responsively App 使用规范</h2>
+
+  <h3>2.1 安装确认</h3>
+  <pre><code><span class="code-comment"># 已通过 Homebrew 安装完成</span>
+brew list --cask responsively   <span class="code-comment"># 确认已安装</span>
+open -a ResponsivelyApp         <span class="code-comment"># 启动</span></code></pre>
+
+  <h3>2.2 标准工作模式</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">VSCode 启动开发服务器</div>
+        <div class="step-desc">在 VSCode 集成终端运行 <code>npm run dev</code>，记录端口（通常 3000 / 5173 / 8080）</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">打开 Responsively，输入本地地址</div>
+        <div class="step-desc">地址栏输入 <code>http://localhost:3000</code>，回车加载</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">配置常用设备组</div>
+        <div class="step-desc">建议保存一套「移动端套件」：iPhone SE (375px) · iPhone 14 (390px) · Android (360px) · iPad Mini (768px)</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">双屏布局</div>
+        <div class="step-desc">VSCode 占左屏，Responsively 占右屏（或副屏）。修改代码保存后，Responsively 自动热重载所有设备视图。</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>2.3 推荐设备配置</h3>
+  <table>
+    <tr><th>设备名</th><th>宽度</th><th>高度</th><th>场景</th></tr>
+    <tr><td>iPhone SE</td><td>375px</td><td>667px</td><td>最小屏兜底测试</td></tr>
+    <tr><td>iPhone 14 Pro</td><td>390px</td><td>844px</td><td>主流 iOS</td></tr>
+    <tr><td>Android (小米)</td><td>360px</td><td>800px</td><td>主流 Android</td></tr>
+    <tr><td>iPad Mini</td><td>768px</td><td>1024px</td><td>平板适配</td></tr>
+    <tr><td>iPad Pro</td><td>1024px</td><td>1366px</td><td>大屏平板</td></tr>
+  </table>
+
+  <h3>2.4 协议说明（商业项目）</h3>
+  <div class="alert alert-yellow">
+    <span class="alert-title">⚠️ AGPL-3.0 说明</span>
+    Responsively 使用 AGPL-3.0 协议。<strong>作为开发工具使用（仅在开发机器上运行，不分发、不嵌入产品代码）完全不触发 AGPL 条款。</strong>
+    AGPL 仅在你将 Responsively 的代码整合进自己产品并对外提供服务时才需要关注。日常调试使用无任何法律风险。
+  </div>
+
+  <!-- 3. Eruda -->
+  <h2 id="eruda">3. Eruda 使用规范</h2>
+
+  <h3>3.1 安装</h3>
+  <pre><code><span class="code-comment"># 方式 A：npm（推荐，构建工具可 tree-shake）</span>
+npm install eruda --save-dev
+
+<span class="code-comment"># 方式 B：CDN（纯 HTML 项目）</span>
+<span class="code-str">&lt;script src="https://cdn.jsdelivr.net/npm/eruda@3/eruda.min.js"&gt;&lt;/script&gt;</span></code></pre>
+
+  <h3>3.2 标准接入代码（React / Vue 项目）</h3>
+  <pre><code><span class="code-comment">// src/main.js 或 src/index.js 顶部</span>
+<span class="code-key">if</span> (import.meta.env.DEV) {         <span class="code-comment">// Vite 写法</span>
+  <span class="code-fn">import</span>(<span class="code-str">'eruda'</span>).<span class="code-fn">then</span>(({ <span class="code-fn">default</span>: eruda }) => eruda.<span class="code-fn">init</span>())
+}
+
+<span class="code-comment">// Create React App 写法</span>
+<span class="code-key">if</span> (process.env.NODE_ENV === <span class="code-str">'development'</span>) {
+  <span class="code-fn">require</span>(<span class="code-str">'eruda'</span>).<span class="code-fn">init</span>()
+}</code></pre>
+
+  <h3>3.3 标准接入代码（纯 HTML 项目）</h3>
+  <pre><code><span class="code-comment">&lt;!-- 放在 &lt;/body&gt; 前，生产上线时删除整个 script 块 --&gt;</span>
+<span class="code-str">&lt;script&gt;</span>
+  <span class="code-key">var</span> isDev = window.location.hostname === <span class="code-str">'localhost'</span>
+            || window.location.hostname === <span class="code-str">'127.0.0.1'</span>
+            || window.location.search.includes(<span class="code-str">'debug=true'</span>)
+
+  <span class="code-key">if</span> (isDev) {
+    <span class="code-key">var</span> s = document.<span class="code-fn">createElement</span>(<span class="code-str">'script'</span>)
+    s.src = <span class="code-str">'https://cdn.jsdelivr.net/npm/eruda@3/eruda.min.js'</span>
+    s.onload = <span class="code-key">function</span>() { eruda.<span class="code-fn">init</span>() }
+    document.head.<span class="code-fn">appendChild</span>(s)
+  }
+<span class="code-str">&lt;/script&gt;</span></code></pre>
+
+  <div class="alert alert-blue">
+    <span class="alert-title">💡 高级技巧：?debug=true 生产临时调试</span>
+    上面代码中加入了 <code>window.location.search.includes('debug=true')</code>。
+    线上遇到 bug 时，URL 后加 <code>?debug=true</code> 即可临时唤出调试面板，不需要重新发布。
+    <strong>注意：仅在内部测试时用，不要公开此技巧。</strong>
+  </div>
+
+  <h3>3.4 Eruda 面板功能速查</h3>
+  <table>
+    <tr><th>Tab</th><th>功能</th><th>常用场景</th></tr>
+    <tr><td><code>Console</code></td><td>JS 日志 / 报错 / 执行命令</td><td>白屏排查、逻辑调试</td></tr>
+    <tr><td><code>Network</code></td><td>XHR / Fetch 请求监控</td><td>接口返回异常</td></tr>
+    <tr><td><code>Elements</code></td><td>DOM 树查看</td><td>样式不对、元素定位</td></tr>
+    <tr><td><code>Storage</code></td><td>Cookie / LocalStorage / SessionStorage</td><td>登录态、缓存问题</td></tr>
+    <tr><td><code>Resources</code></td><td>页面资源列表</td><td>资源加载失败</td></tr>
+    <tr><td><code>Info</code></td><td>设备信息 / UA / 分辨率</td><td>兼容性排查</td></tr>
+  </table>
+
+  <!-- 4. 安全规范 -->
+  <h2 id="security">4. 安全规范（商业项目强制）</h2>
+
+  <div class="alert alert-red">
+    <span class="alert-title">🔴 P0 红线：Eruda 严禁进入生产环境</span>
+    Eruda 面板暴露在生产环境会让任意用户看到：完整 API 请求体（含用户 Token）、LocalStorage 内的敏感数据、完整 DOM 结构。
+    这是一个严重的信息泄露漏洞，<strong>任何情况下不允许带 eruda.init() 上生产。</strong>
+  </div>
+
+  <h3>4.1 构建验证（CI 必加）</h3>
+  <pre><code><span class="code-comment"># package.json scripts 中加入构建前检查</span>
+<span class="code-str">"prebuild"</span>: <span class="code-str">"grep -r 'eruda.init' src/ && echo '❌ 发现 eruda.init，禁止构建' && exit 1 || echo '✅ 无 eruda.init'"</span></code></pre>
+
+  <h3>4.2 .gitignore 规范</h3>
+  <pre><code><span class="code-comment"># .gitignore 已有，确认包含：</span>
+<span class="code-green">node_modules/</span>
+<span class="code-green">.env.local</span>
+<span class="code-green">.env.production</span>
+<span class="code-green">dist/</span>
+<span class="code-green">build/</span></code></pre>
+
+  <h3>4.3 BrowserSync 网络安全（如使用）</h3>
+  <pre><code><span class="code-comment"># 限制只在本机访问，防止局域网其他设备看到你的代码</span>
+npx browser-sync start --server --host localhost
+
+<span class="code-comment"># 如需局域网真机测试，用完立即关闭</span>
+npx browser-sync start --server  <span class="code-comment"># 用完 Ctrl+C</span></code></pre>
+
+  <!-- 5. 工作流 -->
+  <h2 id="workflow">5. 日常开发工作流</h2>
+
+  <div class="flow">
+    <div class="flow-box active">VSCode 写代码</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">npm run dev 启动</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box active">Responsively 看布局</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">手机扫码/访问</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box active">Eruda 调真机 bug</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">npm run build</div>
+  </div>
+
+  <table>
+    <tr><th>阶段</th><th>工具</th><th>操作</th></tr>
+    <tr><td>写 CSS 布局</td><td>Responsively</td><td>旁边开着，实时看多设备</td></tr>
+    <tr><td>写 JS 逻辑</td><td>VSCode + Chrome DevTools</td><td>正常桌面调试</td></tr>
+    <tr><td>真机验证交互</td><td>BrowserSync（可选）</td><td>手机同一 WiFi 访问</td></tr>
+    <tr><td>真机 bug 排查</td><td>Eruda</td><td>手机上查 console/network</td></tr>
+    <tr><td>构建上线</td><td>—</td><td>确认无 eruda.init 再 build</td></tr>
+  </table>
+
+  <!-- 6. 检查清单 -->
+  <h2 id="checklist">6. 上线前检查清单</h2>
+
+  <ul class="checklist">
+    <li class="must">代码中无 <code>eruda.init()</code>（或已被 NODE_ENV 条件包裹）</li>
+    <li class="must">eruda 在 package.json 中是 devDependencies，不是 dependencies</li>
+    <li class="must">生产 build 产物中搜索不到 "eruda" 字符串</li>
+    <li class="must">BrowserSync 未在生产服务器上运行</li>
+    <li class="warn">已在 iPhone SE（375px）最小屏下测试布局无破坏</li>
+    <li class="warn">已在 Android（360px）下测试触摸交互正常</li>
+    <li class="warn">Responsively App 截图留存，作为视觉验收记录</li>
+    <li class="no">不能将 ?debug=true 链接分享给终端用户</li>
+    <li class="no">不能在生产环境 URL 中包含 debug=true</li>
+  </ul>
+
+  <!-- 7. FAQ -->
+  <h2 id="faq">7. 常见问题</h2>
+
+  <h3>Q：Responsively 打开页面是空白的？</h3>
+  <p>检查开发服务器是否正在运行（<code>npm run dev</code>），以及端口是否正确。Responsively 只是一个浏览器，需要你的服务器先跑起来。</p>
+
+  <h3>Q：Eruda 面板不出现？</h3>
+  <p>1. 检查 CDN 是否可达（网络问题）。2. 检查 <code>eruda.init()</code> 是否在 DOM 加载后执行。3. 检查是否被 Content Security Policy 拦截（控制台会有报错）。</p>
+
+  <h3>Q：手机访问 localhost 打不开？</h3>
+  <p>localhost 只能本机访问。手机测试需要用 BrowserSync 或查本机局域网 IP（<code>ifconfig | grep inet</code>），用 <code>http://192.168.x.x:3000</code> 访问。</p>
+
+  <h3>Q：Responsively 和 Chrome DevTools 的区别？</h3>
+  <p>Chrome DevTools 的设备模拟是单设备切换，一次只看一个。Responsively 同时显示所有设备，修改 CSS 时能一眼看到所有尺寸的变化，效率更高。</p>
+
+  <div class="alert alert-green" style="margin-top:32px;">
+    <span class="alert-title">✅ 演示验证</span>
+    打开 <code>docs/06-工程/mobile-debug-demo.html</code> 可以看到完整的 Eruda 集成演示。
+    用 Responsively App 打开该文件对应的本地服务地址，可验证两个工具的完整工作流。
+  </div>
+
+</div>
+
+<footer>
+  移动端调试工具使用规范 v1.0 · 2026-05-28 · 适用：商业项目 + VSCode 开发环境<br>
+  路径：Downloads/fire-eye-docs/docs/mobile-tools-standard.html
+</footer>
+
+</body>
+</html>

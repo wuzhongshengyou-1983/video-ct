@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>找对标 · 品类扩展与子维度联动方案</title>
+<style>
+  :root {
+    --bg: #0a0a0f; --card: #111118; --border: #1e1e2e;
+    --text: #e4e4ec; --text2: #9090a8; --text3: #585878;
+    --amber: #f59e0b; --amber-bg: rgba(245,158,11,0.08); --amber-border: rgba(245,158,11,0.2);
+    --green: #22c55e; --green-bg: rgba(34,197,94,0.08);
+    --red: #ef4444; --red-bg: rgba(239,68,68,0.08);
+    --blue: #64d2ff; --blue-bg: rgba(100,210,255,0.08);
+    --radius: 10px; --radius-sm: 6px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height:1.6; padding:40px 20px; }
+  .container { max-width:1100px; margin:0 auto; }
+  h1 { font-size:28px; font-weight:800; text-align:center; margin-bottom:8px; }
+  .subtitle { text-align:center; color:var(--text2); margin-bottom:48px; font-size:14px; }
+
+  /* Section */
+  .section { margin-bottom:48px; }
+  .section-title { font-size:14px; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .section-title::before { content:''; display:block; width:4px; height:16px; background:var(--amber); border-radius:2px; }
+
+  /* Problem cards */
+  .problem-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
+  .problem-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .problem-card h3 { font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .problem-card p { font-size:13px; color:var(--text2); line-height:1.7; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; }
+  .badge-red { background:var(--red-bg); color:var(--red); border:0.5px solid rgba(239,68,68,0.2); }
+  .badge-amber { background:var(--amber-bg); color:var(--amber); border:0.5px solid var(--amber-border); }
+
+  /* Architecture diagram */
+  .arch-flow { display:flex; align-items:center; gap:0; overflow-x:auto; padding:16px 0; }
+  .arch-node { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; text-align:center; min-width:120px; flex-shrink:0; }
+  .arch-node.active { border-color:var(--amber-border); background:var(--amber-bg); }
+  .arch-node.new { border-color:rgba(100,210,255,0.25); background:var(--blue-bg); }
+  .arch-node h4 { font-size:13px; margin-bottom:4px; }
+  .arch-node .desc { font-size:10px; color:var(--text2); }
+  .arch-arrow { flex-shrink:0; color:var(--text3); font-size:20px; padding:0 8px; }
+
+  /* Comparison table */
+  .cmp-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .cmp-table th { text-align:left; padding:12px 14px; color:var(--text2); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid var(--border); }
+  .cmp-table td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:top; }
+  .cmp-table tr:hover td { background:rgba(255,255,255,0.01); }
+  .cmp-table .pro { color:var(--green); }
+  .cmp-table .con { color:var(--red); }
+
+  /* Phase timeline */
+  .phase-list { display:flex; flex-direction:column; gap:12px; }
+  .phase-item { display:flex; gap:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; position:relative; }
+  .phase-marker { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0; }
+  .phase-marker.now { background:var(--amber-bg); color:var(--amber); border:2px solid var(--amber-border); }
+  .phase-marker.next { background:rgba(255,255,255,0.03); color:var(--text2); border:2px solid var(--border); }
+  .phase-marker.future { background:rgba(255,255,255,0.01); color:var(--text3); border:1px dashed var(--border); }
+  .phase-body h4 { font-size:15px; margin-bottom:4px; }
+  .phase-body .eta { font-size:11px; color:var(--text3); margin-bottom:8px; }
+  .phase-body .changes { font-size:12px; color:var(--text2); line-height:1.7; }
+  .phase-body .changes li { margin-bottom:4px; list-style:none; }
+  .phase-body .changes li::before { content:'→ '; color:var(--amber); }
+
+  /* Three-layer matching diagram */
+  .match-layers { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+  .match-layer { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center; }
+  .match-layer .lvl { font-size:10px; font-weight:700; color:var(--amber); margin-bottom:6px; letter-spacing:0.08em; }
+  .match-layer h4 { font-size:14px; margin-bottom:6px; }
+  .match-layer .example { font-size:11px; color:var(--text2); background:rgba(255,255,255,0.02); padding:8px; border-radius:var(--radius-sm); margin-top:10px; line-height:1.6; }
+  .match-layer .hit { color:var(--green); font-weight:600; }
+  .match-layer .miss { color:var(--text3); }
+
+  /* Data-driven expansion diagram */
+  .data-loop { display:flex; align-items:center; justify-content:center; gap:20px; flex-wrap:wrap; padding:20px 0; }
+  .data-node { background:var(--card); border:1px solid var(--border); border-radius:50%; width:100px; height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .data-node .icon { font-size:24px; }
+  .data-node .label { font-size:10px; color:var(--text2); margin-top:2px; }
+  .data-loop-arrow { color:var(--amber); font-size:24px; }
+
+  /* Decision matrix */
+  .decision-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
+  .decision-card { border-radius:var(--radius); padding:20px; border:1px solid var(--border); }
+  .decision-card.do { background:var(--green-bg); border-color:rgba(34,197,94,0.2); }
+  .decision-card.defer { background:rgba(255,255,255,0.01); border-color:var(--border); }
+  .decision-card.avoid { background:var(--red-bg); border-color:rgba(239,68,68,0.15); }
+  .decision-card h4 { font-size:14px; margin-bottom:6px; }
+  .decision-card .reason { font-size:12px; color:var(--text2); line-height:1.7; }
+
+  /* Code block */
+  .code-block { background:#0d0d14; border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 18px; font-family:'SF Mono','Fira Code',monospace; font-size:12px; line-height:1.8; overflow-x:auto; color:var(--text2); }
+  .code-block .kw { color:#c084fc; }
+  .code-block .str { color:#22c55e; }
+  .code-block .num { color:#f59e0b; }
+  .code-block .cmt { color:var(--text3); font-style:italic; }
+
+  @media (max-width:768px) {
+    .problem-grid, .match-layers, .decision-grid { grid-template-columns:1fr; }
+    .arch-flow { flex-wrap:wrap; justify-content:center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>找对标 · 品类扩展与子维度联动</h1>
+<p class="subtitle">锚点赛道不变 · 子维度驱动覆盖 · 数据驱动渐进扩类</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PROBLEM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">当前问题</div>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <h3><span class="badge badge-red">问题 1</span> 8 大类覆盖不足</h3>
+      <p>
+        口播/带货/知识/美食/剧情/Vlog/美妆/搞笑 只覆盖了短视频生态的 ~40%。
+        游戏、音乐、体育、宠物、三农、亲子、旅行（独立赛道）、科技评测、房产、
+        汽车、职场、法律、心理……大量品类无处安放。<br><br>
+        现状：未知品类→静默降级 Mock，用户得到随机数据。
+      </p>
+    </div>
+    <div class="problem-card">
+      <h3><span class="badge badge-red">问题 2</span> 子维度选了白选</h3>
+      <p>
+        每个赛道 3 个子维度（内容类型/时长/出镜形式），每个 3-5 个选项。<br>
+        用户精心选择后，<strong>因子权重、基准对比、方法论推荐完全不变</strong>。<br><br>
+        选了「观点输出·&lt;30秒·单人」和「故事叙述·3分钟·单人」得到的分析报告一模一样。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">方案架构：三层匹配 + 数据驱动扩类</div>
+
+  <p style="font-size:13px;color:var(--text2);margin-bottom:20px;">
+    核心原则：<strong style="color:var(--amber);">不新增赛道、不修改权重结构、不改变 UI 布局</strong>。
+    通过子维度作为「桥梁」，连接用户需求和现有赛道体系。
+  </p>
+
+  <div class="arch-flow">
+    <div class="arch-node active">
+      <h4>🎯 用户输入</h4>
+      <div class="desc">品类名 + 子维度</div>
+    </div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-node new">
+      <h4>🔍 三级匹配</h4>
+      <div class="desc">精确→别名→签名</div>
+    </div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-node active">
+      <h4>⚓ 锚点赛道</h4>
+      <div class="desc">8 大赛道不变</div>
+    </div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-node new">
+      <h4>📊 基准过滤</h4>
+      <div class="desc">子维度过滤池</div>
+    </div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-node active">
+      <h4>📈 因子计算</h4>
+      <div class="desc">7 因子不变</div>
+    </div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-node">
+      <h4>📋 分析报告</h4>
+      <div class="desc">精度标签联动</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- THREE-LAYER MATCHING -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">核心机制：三级品类匹配</div>
+  <div class="match-layers">
+    <div class="match-layer" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.03);">
+      <div class="lvl" style="color:var(--green);">Level 1</div>
+      <h4>精确匹配</h4>
+      <p style="font-size:12px;color:var(--text2);">品类名直接命中 8 大赛道 key</p>
+      <div class="example">
+        <span class="hit">「口播」→ 口播赛道 ✓</span><br>
+        <span class="hit">「带货」→ 带货赛道 ✓</span><br>
+        <span style="font-size:10px;color:var(--text3);">现有逻辑，不变</span>
+      </div>
+    </div>
+    <div class="match-layer" style="border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.03);">
+      <div class="lvl">Level 2</div>
+      <h4>别名映射</h4>
+      <p style="font-size:12px;color:var(--text2);">CATEGORY_TRACK_ALIASES 扩展映射表</p>
+      <div class="example">
+        <span class="hit">「游戏实况」→ 搞笑</span><br>
+        <span class="hit">「音乐演奏」→ Vlog</span><br>
+        <span class="hit">「体育解说」→ 口播</span><br>
+        <span class="hit">「宠物日常」→ Vlog</span><br>
+        <span class="hit">「科技评测」→ 带货</span><br>
+        <span style="font-size:10px;color:var(--text3);">本次扩展 ~15 条映射</span>
+      </div>
+    </div>
+    <div class="match-layer" style="border-color:rgba(100,210,255,0.25);background:rgba(100,210,255,0.03);">
+      <div class="lvl" style="color:var(--blue);">Level 3</div>
+      <h4>子维度签名推断</h4>
+      <p style="font-size:12px;color:var(--text2);">Level 1+2 都未命中时，用已选子维度计算赛道相似度</p>
+      <div class="example">
+        用户选了：<br>
+        内容=产品展示 · 时长=&lt;30秒 · 风格=快节奏<br>
+        → 计算各赛道签名匹配分<br>
+        <span class="hit">「带货」匹配 2/3 维 → 推荐</span><br>
+        <span style="font-size:10px;color:var(--text3);">Phase 1.5 上线</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SUB-DIMENSION LINKAGE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">子维度联动：从摆设到实际生效</div>
+
+  <table class="cmp-table">
+    <thead>
+      <tr>
+        <th style="width:22%;">联动维度</th>
+        <th style="width:35%;">当前状态</th>
+        <th style="width:43%;">目标状态</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>基准池过滤</strong><br><span style="font-size:10px;color:var(--text3);">最关键的价值</span></td>
+        <td>
+          <span class="con">不联动</span><br>
+          <span style="font-size:11px;color:var(--text2);">不论选什么子维度，都用全赛道头部 50 条做对比</span>
+        </td>
+        <td>
+          <span class="pro">根据已选子维度过滤基准池</span><br>
+          <span style="font-size:11px;color:var(--text2);">
+            0-1 维 → 全赛道 50 条 🟡 赛道近似<br>
+            2 维 → 同内容类型 30 条 🟢 赛道专属<br>
+            3 维 → 同内容+同时长 15 条 🟢 子维度专属
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>精度标签</strong></td>
+        <td>
+          <span class="con">固定显示「赛道专属」</span><br>
+          <span style="font-size:11px;color:var(--text2);">DATA_PRECISION_TIERS 定义了但从未实际切换</span>
+        </td>
+        <td>
+          <span class="pro">联动已选子维度数量</span><br>
+          <span style="font-size:11px;color:var(--text2);">
+            子维度越多 → 精度越高 → 标签从🟡→🟢<br>
+            让用户直观感受到「选得越细，结果越准」
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>方法论排序</strong></td>
+        <td>
+          <span class="con">固定按 difficulty 排序</span>
+        </td>
+        <td>
+          <span class="pro">同内容类型的方法论排前面</span><br>
+          <span style="font-size:11px;color:var(--text2);">
+            选了「观点输出」→ 优先展示「认知冲突」「否定+数字」类方法论<br>
+            选了「故事叙述」→ 优先展示「情绪曲线」「双峰结构」类方法论
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>因子权重微调</strong></td>
+        <td>
+          <span class="con">不联动</span>
+        </td>
+        <td>
+          <span style="color:var(--text3);">⚠️ 暂不做（Phase 2 有数据后再做）</span><br>
+          <span style="font-size:11px;color:var(--text3);">
+            需要真实数据验证修正系数，当前做就是猜测
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- WHY NOT WEIGHT MODIFICATION NOW -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">为什么权重修正现在不做</div>
+  <div class="decision-grid">
+    <div class="decision-card avoid">
+      <h4>❌ 不做：子维度→权重修正</h4>
+      <div class="reason">
+        <strong>核心问题：384 个修正值没有数据支撑。</strong><br><br>
+        「观点输出 +3 hook」这个 +3 从哪来？从哪个数据集验证过？<br>
+        如果这些数字是猜测的，用户看到的「量化分析」就成了伪科学。<br><br>
+        <strong>正确的做法：</strong>等基准池过滤上线后，积累带子维度标签的真实数据，
+        跑回归分析得出每个子维度选项对因子得分的实际影响系数，再实施修正。
+      </div>
+    </div>
+    <div class="decision-card do">
+      <h4>✅ 做：子维度→基准池过滤</h4>
+      <div class="reason">
+        <strong>不需要猜测任何数字。</strong><br><br>
+        规则打标签（时长→duration，标题关键词→content_type）~70%准确率即可用。<br>
+        过滤后的基准数据本身就是真实的，只是范围更精准。<br><br>
+        <strong>用户感知明确：</strong>「选了 3 个子维度后，对比的是同条件 15 条视频而非泛泛 50 条」
+        — 这个价值不需要任何统计推断。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ALIAS EXPANSION -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">本次实施：CATEGORY_TRACK_ALIASES 扩展</div>
+
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+    新增 ~15 条别名映射，覆盖当前最高频的缺失品类。每条映射附带「近似理由」用于前端展示。
+  </p>
+
+  <div class="code-block">
+<span class="cmt"># gene_service.py · CATEGORY_TRACK_ALIASES 扩展（本次新增部分）</span>
+<span class="kw">CATEGORY_TRACK_ALIASES</span>: dict[str, list[str]] = {
+    <span class="cmt"># ── 原有映射（不变）──</span>
+    <span class="str">"口播"</span>: [<span class="str">"职场干货"</span>, <span class="str">"知识教育"</span>, <span class="str">"情感两性"</span>, <span class="str">"生活技巧"</span>, <span class="str">"财经商业"</span>, <span class="str">"健康养生"</span>],
+    <span class="str">"剧情"</span>: [<span class="str">"搞笑段子"</span>, <span class="str">"情感两性"</span>, <span class="str">"二次元动漫"</span>, <span class="str">"文化艺术"</span>, <span class="str">"生活技巧"</span>],
+    <span class="str">"带货"</span>: [<span class="str">"美食料理"</span>, <span class="str">"美妆护肤"</span>, <span class="str">"穿搭时尚"</span>, <span class="str">"科技数码"</span>, <span class="str">"生活技巧"</span>, <span class="str">"房产家居"</span>],
+    <span class="str">"知识"</span>: [<span class="str">"知识教育"</span>, <span class="str">"科技数码"</span>, <span class="str">"财经商业"</span>, <span class="str">"职场干货"</span>, <span class="str">"健康养生"</span>, <span class="str">"汽车评测"</span>],
+    <span class="str">"Vlog"</span>: [<span class="str">"旅游出行"</span>, <span class="str">"美食料理"</span>, <span class="str">"生活技巧"</span>, <span class="str">"宠物萌宠"</span>, <span class="str">"文化艺术"</span>],
+    <span class="str">"美食"</span>: [<span class="str">"美食料理"</span>, <span class="str">"旅游出行"</span>, <span class="str">"生活技巧"</span>],
+    <span class="str">"美妆"</span>: [<span class="str">"美妆护肤"</span>, <span class="str">"穿搭时尚"</span>],
+    <span class="str">"搞笑"</span>: [<span class="str">"搞笑段子"</span>, <span class="str">"二次元动漫"</span>, <span class="str">"宠物萌宠"</span>],
+
+    <span class="cmt"># ── 🆕 新增映射（本次实施）──</span>
+    <span class="str">"游戏"</span>:     [<span class="str">"搞笑段子"</span>, <span class="str">"二次元动漫"</span>],          <span class="cmt"># 游戏实况→娱乐属性</span>
+    <span class="str">"音乐"</span>:     [<span class="str">"文化艺术"</span>, <span class="str">"生活技巧"</span>],        <span class="cmt"># 音乐演奏→Vlog</span>
+    <span class="str">"体育"</span>:     [<span class="str">"生活技巧"</span>, <span class="str">"搞笑段子"</span>],        <span class="cmt"># 体育解说→口播</span>
+    <span class="str">"宠物"</span>:     [<span class="str">"宠物萌宠"</span>, <span class="str">"生活技巧"</span>],        <span class="cmt"># 宠物→Vlog</span>
+    <span class="str">"三农"</span>:     [<span class="str">"生活技巧"</span>, <span class="str">"美食料理"</span>],        <span class="cmt"># 三农→生活/Vlog</span>
+    <span class="str">"亲子"</span>:     [<span class="str">"生活技巧"</span>, <span class="str">"情感两性"</span>],        <span class="cmt"># 亲子→生活/情感</span>
+    <span class="str">"科技"</span>:     [<span class="str">"科技数码"</span>, <span class="str">"知识教育"</span>],        <span class="cmt"># 科技评测→带货/知识</span>
+    <span class="str">"房产"</span>:     [<span class="str">"房产家居"</span>, <span class="str">"财经商业"</span>],        <span class="cmt"># 房产→带货/知识</span>
+    <span class="str">"汽车"</span>:     [<span class="str">"汽车评测"</span>, <span class="str">"科技数码"</span>],        <span class="cmt"># 汽车→知识/带货</span>
+    <span class="str">"法律"</span>:     [<span class="str">"职场干货"</span>, <span class="str">"知识教育"</span>],        <span class="cmt"># 法律→口播/知识</span>
+    <span class="str">"心理"</span>:     [<span class="str">"情感两性"</span>, <span class="str">"知识教育"</span>],        <span class="cmt"># 心理→口播/知识</span>
+    <span class="str">"职场"</span>:     [<span class="str">"职场干货"</span>, <span class="str">"财经商业"</span>],        <span class="cmt"># 职场→口播/知识</span>
+    <span class="str">"时尚"</span>:     [<span class="str">"穿搭时尚"</span>, <span class="str">"美妆护肤"</span>],        <span class="cmt"># 时尚→美妆/带货</span>
+    <span class="str">"舞蹈"</span>:     [<span class="str">"文化艺术"</span>, <span class="str">"搞笑段子"</span>],        <span class="cmt"># 舞蹈→Vlog/搞笑</span>
+    <span class="str">"旅行"</span>:     [<span class="str">"旅游出行"</span>, <span class="str">"美食料理"</span>],        <span class="cmt"># 旅行→Vlog/美食</span>
+}
+
+<span class="cmt"># 🆕 匹配理由映射（前端展示用）</span>
+<span class="kw">CATEGORY_MATCH_REASON</span>: dict[str, str] = {
+    <span class="str">"游戏"</span>: <span class="str">"游戏内容的成功因子与「搞笑」赛道最接近：情绪曲线和钩子力是核心驱动"</span>,
+    <span class="str">"音乐"</span>: <span class="str">"音乐演奏类内容的留存结构和情绪共鸣与「Vlog」赛道模式最接近"</span>,
+    <span class="str">"宠物"</span>: <span class="str">"宠物内容的情绪治愈属性和日常记录形式与「Vlog」赛道一致"</span>,
+    <span class="str">"科技"</span>: <span class="str">"科技产品评测的信任建立和转化钩子与「带货」赛道权重最匹配"</span>,
+    <span class="str">"法律"</span>: <span class="str">"法律科普的认知冲突+方法论框架与「口播」赛道因子结构最接近"</span>,
+    <span class="str">"旅行"</span>: <span class="str">"旅行内容的节奏风格和真实性共鸣与「Vlog」赛道模式一致"</span>,
+    <span class="str">"舞蹈"</span>: <span class="str">"舞蹈内容的视觉冲击和节奏把控与「Vlog」+「搞笑」赛道因子重叠最多"</span>,
+    <span class="str">"体育"</span>: <span class="str">"体育解说的观点输出+情绪曲线与「口播」赛道因子结构高度重合"</span>,
+    <span class="str">"三农"</span>: <span class="str">"三农内容的生活技巧展示和真实记录与「Vlog」赛道模式最接近"</span>,
+    <span class="str">"亲子"</span>: <span class="str">"亲子内容的日常记录和情感共鸣与「Vlog」赛道的情绪曲线权重匹配"</span>,
+    <span class="str">"房产"</span>: <span class="str">"房产内容的信任建立和产品展示与「带货」赛道的信任信号+转化因子一致"</span>,
+    <span class="str">"汽车"</span>: <span class="str">"汽车评测的信息密度和信任信号与「知识」赛道因子权重最接近"</span>,
+    <span class="str">"心理"</span>: <span class="str">"心理科普的观点输出+情感共鸣与「口播」赛道因子结构一致"</span>,
+    <span class="str">"职场"</span>: <span class="str">"职场内容的方法论框架+认知冲突与「口播」赛道因子结构一致"</span>,
+}
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PHASE PLAN -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">分阶段实施路线</div>
+
+  <div class="phase-list">
+    <div class="phase-item">
+      <div class="phase-marker now">1</div>
+      <div class="phase-body">
+        <h4>Phase 1 · 现在 — 别名扩展 + 智能推荐</h4>
+        <div class="eta">本次会话实施 · 改动 ~150 行</div>
+        <ul class="changes">
+          <li>CATEGORY_TRACK_ALIASES 从 8 条扩展到 ~23 条（新增 15 个高频缺失品类）</li>
+          <li>新增 CATEGORY_MATCH_REASON 映射表，前端展示匹配理由</li>
+          <li>GenePage.vue 赛道选择器底部增加「搜索更多品类」输入框</li>
+          <li>未知品类匹配后显示：「未找到「XX」专属赛道，已为您匹配最接近的「YY」赛道 + 理由」</li>
+          <li>品类缺口数据写入日志，积累扩类依据</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase-item">
+      <div class="phase-marker next">1.5</div>
+      <div class="phase-body">
+        <h4>Phase 1.5 · 1-2 周后 — 基准池过滤 + 精度联动</h4>
+        <div class="eta">需要 TikHub 数据积累</div>
+        <ul class="changes">
+          <li>TikHub 拉取的视频自动打子维度标签（规则引擎：时长→duration，标题关键词→content_type）</li>
+          <li>基准池按用户已选子维度过滤，同条件对比从 50 条缩小到 15 条</li>
+          <li>DATA_PRECISION_TIERS 真正联动：子维度越多 → 精度标签越高</li>
+          <li>方法论排序优先匹配内容类型（观点输出→认知冲突法，故事→情绪曲线法）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase-item">
+      <div class="phase-marker future">2</div>
+      <div class="phase-body">
+        <h4>Phase 2 · 2-4 周后 — 数据驱动扩类</h4>
+        <div class="eta">触发条件：品类缺口日志中某品类请求 ≥ 50 次 + 有 ≥ 30 条 TikHub 基准数据</div>
+        <ul class="changes">
+          <li>分析 Phase 1 积累的品类缺口数据，确定 Top 3 高频缺失品类</li>
+          <li>为这 3 个品类收集 TikHub 基准数据（≥30 条）</li>
+          <li>反算因子权重（对基准数据做回归分析得出因子权重，而非猜测）</li>
+          <li>新增为正式赛道（TRACKS 数组 + 子维度定义 + 基因标签 + 差异化文案）</li>
+          <li>届时再考虑子维度→权重微调（有数据了）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DATA LOOP -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">数据闭环：品类覆盖的自我进化</div>
+
+  <div class="data-loop">
+    <div class="data-node">
+      <div class="icon">📝</div>
+      <div class="label">用户输入品类</div>
+    </div>
+    <span class="data-loop-arrow">→</span>
+    <div class="data-node">
+      <div class="icon">🔍</div>
+      <div class="label">三级匹配</div>
+    </div>
+    <span class="data-loop-arrow">→</span>
+    <div class="data-node" style="border-color:var(--amber-border);">
+      <div class="icon">📊</div>
+      <div class="label">缺口日志</div>
+    </div>
+    <span class="data-loop-arrow">→</span>
+    <div class="data-node">
+      <div class="icon">📈</div>
+      <div class="label">高频分析</div>
+    </div>
+    <span class="data-loop-arrow">→</span>
+    <div class="data-node" style="border-color:rgba(34,197,94,0.3);">
+      <div class="icon">✅</div>
+      <div class="label">新增赛道</div>
+    </div>
+    <span class="data-loop-arrow" style="font-size:16px;">⟲</span>
+  </div>
+
+  <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:16px;">
+    每个新增赛道都由真实需求数据驱动，而非拍脑袋决定。权重从回归分析得出，而非猜测。
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SUMMARY -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">总结</div>
+
+  <table class="cmp-table">
+    <thead>
+      <tr><th>决策</th><th>理由</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="pro">✅ 本次做</span> 扩展 CATEGORY_TRACK_ALIASES</td>
+        <td>零风险，立即覆盖 ~15 个缺失品类</td>
+      </tr>
+      <tr>
+        <td><span class="pro">✅ 本次做</span> 未知品类 → 推荐赛道 + 匹配理由</td>
+        <td>用户知道为什么被匹配到这个赛道</td>
+      </tr>
+      <tr>
+        <td><span class="pro">✅ 本次做</span> 品类缺口写日志</td>
+        <td>为 Phase 2 扩类提供数据依据</td>
+      </tr>
+      <tr>
+        <td><span class="pro">✅ Phase 1.5</span> 基准池过滤 + 精度联动</td>
+        <td>子维度首次产生实际价值，且无需猜测数据</td>
+      </tr>
+      <tr>
+        <td><span style="color:var(--text3);">⏸ Phase 2</span> 权重修正</td>
+        <td>等到有数据支撑后，用回归分析得出修正系数</td>
+      </tr>
+      <tr>
+        <td><span class="con">❌ 不做</span> 子维度权重修正（现在）</td>
+        <td>384 个猜测值会制造精确的假象</td>
+      </tr>
+      <tr>
+        <td><span class="con">❌ 不做</span> 新增赛道（现在）</td>
+        <td>没有基准数据的新赛道 = 100% 随机结果</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
