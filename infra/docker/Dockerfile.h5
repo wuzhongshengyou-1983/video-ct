@@ -35,7 +35,7 @@ RUN node -e "const fs=require('fs'); \
       const h=JSON.parse(fs.readFileSync('apps/h5/package.json','utf8')); \
       h.scripts.build='vite build'; \
       fs.writeFileSync('apps/h5/package.json',JSON.stringify(h,null,2))" \
-    && pnpm install --frozen-lockfile --filter @video-ct/h5 \
+    && pnpm install --no-frozen-lockfile --filter @video-ct/h5 \
     && pnpm --filter @video-ct/h5 build
 
 # --------------------------- Stage 2: Nginx ---------------------------
