@@ -1,0 +1,58 @@
+name: Bug 报告
+description: 发现了一个问题
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填完下面每一项，方便快速定位。
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 影响模块
+      options:
+        - H5 C端
+        - 管理后台 Admin
+        - 顾问后台 Consultant
+        - 后端 API
+        - CT 诊断
+        - 对标功能
+        - 订阅/支付
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      placeholder: 发生了什么，期望是什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 ...
+        2. 点击 ...
+        3. 看到 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      placeholder: |
+        - 设备：iPhone 14 / Android / PC
+        - 浏览器：Chrome 124 / Safari
+        - 版本：v0.x.x（右下角显示）
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 错误日志（可选）
+      render: shell

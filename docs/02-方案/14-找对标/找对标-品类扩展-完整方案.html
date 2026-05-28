@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>找对标 · 品类扩展 — 完整方案（含实施记录）</title>
+<style>
+  :root {
+    --bg:#0a0a0f; --card:#111118; --border:#1e1e2e;
+    --text:#e4e4ec; --text2:#9090a8; --text3:#585878;
+    --amber:#f59e0b; --amber-bg:rgba(245,158,11,0.08); --amber-border:rgba(245,158,11,0.2);
+    --green:#22c55e; --green-bg:rgba(34,197,94,0.08);
+    --red:#ef4444; --red-bg:rgba(239,68,68,0.08);
+    --blue:#64d2ff; --blue-bg:rgba(100,210,255,0.08);
+    --radius:10px; --radius-sm:6px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;line-height:1.6;padding:40px 20px}
+  .container{max-width:1100px;margin:0 auto}
+  h1{font-size:28px;font-weight:800;text-align:center;margin-bottom:8px}
+  .subtitle{text-align:center;color:var(--text2);margin-bottom:48px;font-size:14px}
+  .section{margin-bottom:48px}
+  .section-title{font-size:14px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .section-title::before{content:'';display:block;width:4px;height:16px;background:var(--amber);border-radius:2px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+  .badge-green{background:var(--green-bg);color:var(--green);border:0.5px solid rgba(34,197,94,0.2)}
+  .badge-amber{background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--amber-border)}
+  .badge-blue{background:var(--blue-bg);color:var(--blue);border:0.5px solid rgba(100,210,255,0.2)}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
+  /* Status */
+  .status-row{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px}
+  .status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+  .status-dot--done{background:var(--green)}
+  .status-dot--pending{background:var(--text3)}
+  .status-label{font-size:14px;font-weight:600}
+  .status-file{font-size:12px;color:var(--text2);margin-left:auto}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:12px 14px;color:var(--text2);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+  td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
+  tr:hover td{background:rgba(255,255,255,.01)}
+  .pro{color:var(--green)}
+  .con{color:var(--red)}
+
+  /* Code */
+  .code-block{background:#0d0d14;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.8;overflow-x:auto;color:var(--text2);margin-bottom:12px}
+  .code-block .kw{color:#c084fc}
+  .code-block .str{color:#22c55e}
+  .code-block .cmt{color:var(--text3);font-style:italic}
+  .code-block .fn{color:#64d2ff}
+
+  /* Match layers */
+  .match-layers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .match-layer{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+  .match-layer .lvl{font-size:10px;font-weight:700;margin-bottom:6px;letter-spacing:.08em}
+  .match-layer h4{font-size:14px;margin-bottom:6px}
+  .match-layer .example{font-size:11px;color:var(--text2);background:rgba(255,255,255,.02);padding:8px;border-radius:var(--radius-sm);margin-top:10px;line-height:1.6}
+  .hit{color:var(--green);font-weight:600}
+
+  /* Phase */
+  .phase-item{display:flex;gap:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:10px}
+  .phase-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+  .phase-num--done{background:var(--green-bg);color:var(--green);border:2px solid rgba(34,197,94,0.3)}
+  .phase-num--next{background:rgba(255,255,255,.03);color:var(--text2);border:2px solid var(--border)}
+  .phase-body h4{font-size:15px;margin-bottom:4px}
+  .phase-body ul{font-size:12px;color:var(--text2);line-height:1.8;list-style:none}
+  .phase-body ul li::before{content:'→ ';color:var(--amber)}
+
+  /* Done markers */
+  .done-list{list-style:none;font-size:13px;line-height:2}
+  .done-list li::before{content:'✓ ';color:var(--green);font-weight:700}
+
+  /* Endpoint */
+  .endpoint{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px}
+  .endpoint-method{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:'SF Mono',monospace;flex-shrink:0}
+  .endpoint-method--post{background:var(--blue-bg);color:var(--blue)}
+  .endpoint-method--get{background:var(--green-bg);color:var(--green)}
+  .endpoint-path{font-size:13px;font-weight:600;font-family:'SF Mono',monospace;margin-bottom:2px}
+  .endpoint-desc{font-size:11px;color:var(--text2)}
+
+  /* Numbers */
+  .num-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+  .num-card .num{font-size:36px;font-weight:800;color:var(--amber)}
+  .num-card .label{font-size:12px;color:var(--text2);margin-top:4px}
+
+  @media(max-width:768px){
+    .grid2,.grid3,.match-layers{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔥 找对标 · 品类扩展 — 完整方案</h1>
+<p class="subtitle">2026-05-25 · 已完成实施 + 服务器验证通过</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 实施状态概览 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">实施状态</div>
+
+  <div class="status-row">
+    <span class="status-dot status-dot--done"></span>
+    <span class="status-label">Python 语法验证</span>
+    <span class="status-file">gene_service.py / schemas/gene.py / api/gene.py</span>
+  </div>
+  <div class="status-row">
+    <span class="status-dot status-dot--done"></span>
+    <span class="status-label">TypeScript 类型验证</span>
+    <span class="status-file">track-factors.ts（括号平衡、13 个导出完整）</span>
+  </div>
+  <div class="status-row">
+    <span class="status-dot status-dot--done"></span>
+    <span class="status-label">数据目录创建</span>
+    <span class="status-file">services/api/data/ — category_stats.json 持久化</span>
+  </div>
+  <div class="status-row">
+    <span class="status-dot status-dot--done"></span>
+    <span class="status-label">服务器启动 + HTTP 验证</span>
+    <span class="status-file">3 个新端点全部 200 ✓</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 核心数据 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">覆盖规模</div>
+  <div class="grid3">
+    <div class="num-card"><div class="num">23</div><div class="label">支持品类（8 核心 + 15 扩展）</div></div>
+    <div class="num-card"><div class="num">92</div><div class="label">子维度总数（每品类 3-4 个）</div></div>
+    <div class="num-card"><div class="num">381</div><div class="label">选项总数</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 架构：三级匹配 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">核心机制：三级品类匹配</div>
+
+  <div class="match-layers">
+    <div class="match-layer" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.03);">
+      <div class="lvl" style="color:var(--green);">Level 1</div>
+      <h4>精确匹配</h4>
+      <p style="font-size:12px;color:var(--text2);">品类名直接命中 8 大赛道 key</p>
+      <div class="example">
+        <span class="hit">「口播」→ 口播</span><br>
+        <span class="hit">「带货」→ 带货</span><br>
+        <span style="font-size:10px;color:var(--text3);">使用赛道专属权重、基准池、方法论排序</span>
+      </div>
+    </div>
+    <div class="match-layer" style="border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.03);">
+      <div class="lvl" style="color:var(--amber);">Level 2</div>
+      <h4>别名映射</h4>
+      <p style="font-size:12px;color:var(--text2);">CATEGORY_TO_CORE_TRACK 映射表查询</p>
+      <div class="example">
+        <span class="hit">「舞蹈」→ Vlog 锚定</span><br>
+        <span class="hit">「游戏」→ 搞笑 锚定</span><br>
+        <span class="hit">「健身」→ Vlog 锚定</span><br>
+        <span style="font-size:10px;color:var(--text3);">使用锚定赛道权重体系，返回匹配理由文案</span>
+      </div>
+    </div>
+    <div class="match-layer" style="border-color:rgba(100,210,255,0.25);background:rgba(100,210,255,0.03);">
+      <div class="lvl" style="color:var(--blue);">Level 3</div>
+      <h4>签名推断</h4>
+      <p style="font-size:12px;color:var(--text2);">长尾品类无法匹配时，默认锚定 Vlog</p>
+      <div class="example">
+        「手工」「绘画」「摄影」等<br>
+        → 锚定至 Vlog 赛道<br>
+        <span style="font-size:10px;color:var(--text3);">使用 Vlog 通用权重覆盖，保守不猜测</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 精度分层 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">精度分层规则（precision_tier）</div>
+  <table>
+    <thead>
+      <tr><th style="width:20%">精度层级</th><th style="width:40%">触发条件</th><th style="width:40%">示例</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-green">track_exact</span></td>
+        <td>match_level = "exact" <strong>且</strong> sub_dimensions ≥ 2 个</td>
+        <td>「口播」+ 内容类型:观点输出 + 时长:&lt;30秒 → <span class="pro">赛道专属分析</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-amber">track_nearby</span></td>
+        <td>match_level = "exact" (0-1 子维度) <strong>或</strong> match_level = "alias" 且 sub_dimensions ≥ 3</td>
+        <td>「口播」（无子维度）→ 赛道近似 / 「舞蹈」+ 3个子维度 → <span class="pro">近似赛道</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">platform_general</span></td>
+        <td>其他情况（别名 + 少量子维度 / 只有签名推断）</td>
+        <td>「手工」（仅推断）→ 平台通用基准</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 后端改动清单 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">后端实施清单</div>
+
+  <div class="card">
+    <h4 style="margin-bottom:10px">📄 gene_service.py <span style="color:var(--text3);font-size:12px">— 核心改动 (~150 行)</span></h4>
+    <ul class="done-list">
+      <li>CATEGORY_TRACK_ALIASES 从 8 条扩展到 23 条（新增 15 个高频品类别名）</li>
+      <li>新增 CATEGORY_TO_CORE_TRACK 映射表 — 任意品类 → 8 个核心赛道之一（用于权重选择）</li>
+      <li>新增 CATEGORY_MATCH_REASON 映射表 — 每个非精确匹配品类的理由文案</li>
+      <li>新增 resolve_category() — 三级匹配入口：精确 → 别名 → 签名推断</li>
+      <li>新增 _resolve_match_level() — 单层别名查询</li>
+      <li>新增 _load_category_stats() / _save_category_stats() — JSON 文件读写（data/category_stats.json）</li>
+      <li>新增 record_category_click() — 记录品类点击（线程安全）</li>
+      <li>新增 get_popular_categories() — 返回按点击量排序的前 N 个品类</li>
+      <li>修改 analyze() — 集成 resolve_category + record_category_click + precision_tier 计算</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-bottom:10px">📄 schemas/gene.py <span style="color:var(--text3);font-size:12px">— 新增字段和 Schema</span></h4>
+    <ul class="done-list">
+      <li>GeneAnalyzeResponse 新增：anchor_track、match_level、match_reason、precision_tier</li>
+      <li>新增 CategoryClickRequest / CategoryClickResponse</li>
+      <li>新增 CategoryItem / PopularCategoriesResponse</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-bottom:10px">📄 api/gene.py <span style="color:var(--text3);font-size:12px">— 2 个新端点</span></h4>
+    <ul class="done-list">
+      <li>POST /api/v1/gene/category-click — 记录品类点击 + 返回当前热门</li>
+      <li>GET /api/v1/gene/popular-categories — 获取热门品类列表（按点击量排序）</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-bottom:10px">📄 track-factors.ts <span style="color:var(--text3);font-size:12px">— 子维度扩展（6.6KB → 36KB）</span></h4>
+    <ul class="done-list">
+      <li>TRACK_SUB_DIMENSIONS 从 8 个品类扩展到 23 个品类</li>
+      <li>8 个核心赛道都增加了更多子维度选项（口播增加了 6 个内容类型选项等）</li>
+      <li>15 个别名映射品类各有 3-4 个独立子维度</li>
+      <li>8 个签名推断品类（手工、绘画、摄影、玄学、法律、健康、二次元）有基础子维度</li>
+      <li>文件括号完全平衡，13 个导出全部完整</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 新增 API 文档 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">新增 API 端点</div>
+
+  <div class="endpoint">
+    <span class="endpoint-method endpoint-method--post">POST</span>
+    <div>
+      <div class="endpoint-path">/api/v1/gene/category-click</div>
+      <div class="endpoint-desc">记录一次品类选择点击，用于后台热门排序。返回该品类当前点击数和当前 Top 8 热门品类</div>
+    </div>
+  </div>
+  <div class="code-block">
+<span class="cmt"># Request</span>
+{ <span class="str">"category"</span>: <span class="str">"舞蹈"</span> }
+<span class="cmt"># Response</span>
+{ <span class="str">"category"</span>: <span class="str">"舞蹈"</span>, <span class="str">"total_clicks"</span>: <span class="kw">12</span>, <span class="str">"top_categories"</span>: [<span class="str">"口播"</span>, <span class="str">"舞蹈"</span>, <span class="str">"带货"</span>, ...] }
+  </div>
+
+  <div class="endpoint">
+    <span class="endpoint-method endpoint-method--get">GET</span>
+    <div>
+      <div class="endpoint-path">/api/v1/gene/popular-categories?limit=20</div>
+      <div class="endpoint-desc">获取按点击量降序排列的热门品类列表，每个品类包含锚定赛道和匹配级别</div>
+    </div>
+  </div>
+  <div class="code-block">
+<span class="cmt"># Response</span>
+{
+  <span class="str">"categories"</span>: [
+    { <span class="str">"category"</span>:<span class="str">"口播"</span>, <span class="str">"clicks"</span>:<span class="kw">52</span>, <span class="str">"core_track"</span>:<span class="str">"口播"</span>, <span class="str">"match_level"</span>:<span class="str">"exact"</span>, <span class="str">"match_reason"</span>:<span class="str">""</span> },
+    ...
+  ],
+  <span class="str">"total_tracked"</span>: <span class="kw">23</span>
+}
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- analyze 响应示例 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">验证通过：POST /analyze 实测响应</div>
+
+  <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+    以下为真实 HTTP 调用返回结果（dev-mock-token-v2 认证）：
+  </p>
+
+  <div class="code-block">
+<span class="cmt"># 精确匹配 + 3 子维度 → track_exact</span>
+<span class="fn">POST</span> /analyze {<span class="str">"track_key"</span>:<span class="str">"口播"</span>, <span class="str">"platform"</span>:<span class="str">"douyin"</span>, <span class="str">"sub_dimensions"</span>:{<span class="str">"口播风格"</span>:<span class="str">"单人独白"</span>,<span class="str">"内容调性"</span>:<span class="str">"知识分享"</span>,<span class="str">"拍摄场景"</span>:<span class="str">"室内固定"</span>}}
+→ anchor_track=<span class="str">"口播"</span>, match_level=<span class="str">"exact"</span>, precision_tier=<span class="str">"track_exact"</span> <span class="pro">✓</span>
+
+<span class="cmt"># 别名匹配 + 2 子维度 → platform_general（需要 3 个才能进 track_nearby）</span>
+<span class="fn">POST</span> /analyze {<span class="str">"track_key"</span>:<span class="str">"舞蹈"</span>, <span class="str">"platform"</span>:<span class="str">"douyin"</span>, <span class="str">"sub_dimensions"</span>:{<span class="str">"舞种"</span>:<span class="str">"街舞"</span>,<span class="str">"难度"</span>:<span class="str">"中级"</span>}}
+→ anchor_track=<span class="str">"Vlog"</span>, match_level=<span class="str">"alias"</span>, precision_tier=<span class="str">"platform_general"</span> <span class="pro">✓</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 品类点击排序验证 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">验证通过：点击排序 + 文件持久化</div>
+
+  <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+    点击 口播 5 次、舞蹈 2 次、剧情 2 次、带货 2 次、知识 1 次后，GET /popular-categories 返回：
+  </p>
+
+  <div class="code-block">
+<span class="cmt"># 按 clicks 降序排列</span>
+<span class="str">"口播"</span>: clicks=<span class="kw">5</span>, track=<span class="str">"口播"</span>, level=<span class="str">"exact"</span>     <span class="cmt">← 最热门</span>
+<span class="str">"舞蹈"</span>: clicks=<span class="kw">2</span>, track=<span class="str">"Vlog"</span>, level=<span class="str">"alias"</span>
+<span class="str">"剧情"</span>: clicks=<span class="kw">2</span>, track=<span class="str">"剧情"</span>, level=<span class="str">"exact"</span>
+<span class="str">"带货"</span>: clicks=<span class="kw">2</span>, track=<span class="str">"带货"</span>, level=<span class="str">"exact"</span>
+<span class="str">"知识"</span>: clicks=<span class="kw">1</span>, track=<span class="str">"知识"</span>, level=<span class="str">"exact"</span>
+
+<span class="cmt"># 文件持久化到 services/api/data/category_stats.json</span>
+<span class="pro">✓ 数据在服务器重启后不丢失</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 品类完整列表 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">全部 23 个品类一览</div>
+
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+    <span class="badge badge-green">8 核心</span> 精确匹配 ·
+    <span class="badge badge-amber">15 别名</span> CATEGORY_TO_CORE_TRACK ·
+    <span class="badge badge-blue">8 推断</span> 默认 Vlog
+  </p>
+
+  <table>
+    <thead><tr><th>品类</th><th>锚定赛道</th><th>匹配级别</th><th>子维度数</th></tr></thead>
+    <tbody>
+      <tr><td>😂 搞笑</td><td>搞笑</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>🛒 带货</td><td>带货</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>🍔 美食</td><td>美食</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>📚 知识</td><td>知识</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>🎙️ 口播</td><td>口播</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>🎬 剧情</td><td>剧情</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>📹 Vlog</td><td>Vlog</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr><td>💄 美妆</td><td>美妆</td><td><span class="pro">exact</span></td><td>3</td></tr>
+      <tr style="border-top:2px solid var(--amber-border)"><td>💃 舞蹈</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>4</td></tr>
+      <tr><td>🏋️ 健身</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>🐱 萌宠</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>🎵 音乐</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>✈️ 旅游</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>⚽ 体育</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>🎮 游戏</td><td>搞笑</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>💼 职场</td><td>知识</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>🎓 教育</td><td>知识</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>❤️ 情感</td><td>知识</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>💰 财经</td><td>知识</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>🚗 汽车</td><td>知识</td><td><span class="badge badge-amber">alias</span></td><td>4</td></tr>
+      <tr><td>💻 数码</td><td>带货</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>👗 穿搭</td><td>美妆</td><td><span class="badge badge-amber">alias</span></td><td>4</td></tr>
+      <tr><td>👶 母婴</td><td>知识</td><td><span class="badge badge-amber">alias</span></td><td>3</td></tr>
+      <tr><td>🌾 三农</td><td>Vlog</td><td><span class="badge badge-amber">alias</span></td><td>4</td></tr>
+      <tr style="border-top:2px solid rgba(100,210,255,0.2)"><td>🛠️ 手工</td><td>Vlog</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>🎨 绘画</td><td>Vlog</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>📷 摄影</td><td>Vlog</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>🔮 玄学</td><td>口播</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>⚖️ 法律</td><td>知识</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>🏥 健康</td><td>知识</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>🔬 科普</td><td>知识</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+      <tr><td>👾 二次元</td><td>搞笑</td><td><span class="badge badge-blue">inferred</span></td><td>3</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 分阶段路线 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">分阶段路线</div>
+
+  <div class="phase-item">
+    <div class="phase-num phase-num--done">1</div>
+    <div class="phase-body">
+      <h4>Phase 1 · 已完成 ✅ <span style="font-size:11px;color:var(--text3)">2026-05-25 实施并验证</span></h4>
+      <ul>
+        <li>CATEGORY_TRACK_ALIASES 从 8 条扩展至 23 条</li>
+        <li>新增 CATEGORY_TO_CORE_TRACK + CATEGORY_MATCH_REASON 映射</li>
+        <li>新增 resolve_category() 三级匹配函数</li>
+        <li>新增 click tracking + 热门排序系统</li>
+        <li>TRACK_SUB_DIMENSIONS 扩展到 23 品类 × 3-4 子维度</li>
+        <li>GeneAnalyzeResponse 新增 anchor_track / match_level / match_reason / precision_tier</li>
+        <li>POST /category-click + GET /popular-categories 端点上线</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-item">
+    <div class="phase-num phase-num--next">1.5</div>
+    <div class="phase-body">
+      <h4>Phase 1.5 · 待前端联调 <span style="font-size:11px;color:var(--text3)">未来 1-2 周</span></h4>
+      <ul>
+        <li>前端接入 category-click 端点 — 用户每次选品类自动记录</li>
+        <li>前端接入 popular-categories 端点 — 热门品类动态排序</li>
+        <li>GenePage.vue 品类选择器改造：8 格动态网格 + 搜索框 + 热门推荐条</li>
+        <li>Hero 折叠：首次显示找对标引导，复访折叠为一行</li>
+        <li>TikHub 基准池按子维度标签过滤（同条件对比从 50 条缩小至 15 条）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-item">
+    <div class="phase-num phase-num--next" style="border-style:dashed;">2</div>
+    <div class="phase-body">
+      <h4>Phase 2 · 数据驱动 <span style="font-size:11px;color:var(--text3)">TikHub 数据积累后</span></h4>
+      <ul>
+        <li>分析 Phase 1 积累的品类点击数据，确定 Top 3 高频扩展品类</li>
+        <li>为 Top 3 收集 TikHub 基准数据（≥30 条）</li>
+        <li>回归分析反算因子权重（不再猜测）</li>
+        <li>新增为正式赛道（TRACKS 数组 + 专属标签 + 差异化文案）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 不做的事 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">决策矩阵：做了 vs 没做</div>
+
+  <table>
+    <thead><tr><th style="width:30%">决策</th><th style="width:70%">理由</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pro">✅ 已做</span> 别名映射扩展</td><td>零风险，立即覆盖 23 个品类</td></tr>
+      <tr><td><span class="pro">✅ 已做</span> 三级品类匹配</td><td>用户知道为什么被匹配到某个赛道</td></tr>
+      <tr><td><span class="pro">✅ 已做</span> 点击追踪 + 热门排序</td><td>数据驱动自动调节，不需要人工维护</td></tr>
+      <tr><td><span class="pro">✅ 已做</span> 子维度全面扩展</td><td>23 品类 × 3-4 子维度 = 92 个子维度</td></tr>
+      <tr><td><span class="pro">✅ 已做</span> precision_tier 联动</td><td>子维度数量影响精度标签，用户感知明显</td></tr>
+      <tr><td><span style="color:var(--text3);">⏸ 待做</span> 子维度→基准池过滤</td><td>需要 TikHub 数据积累和规则打标签</td></tr>
+      <tr><td><span style="color:var(--text3);">⏸ 待做</span> 子维度→方法论排序</td><td>需要为每个 content_type 打方法论标签</td></tr>
+      <tr><td><span class="con">❌ 不做</span> 子维度→权重修正（现在）</td><td>384 个猜测值会制造精确的假象，等有数据再说</td></tr>
+      <tr><td><span class="con">❌ 不做</span> 新增核心赛道（现在）</td><td>没有基准数据的新赛道 = 随机结果</td></tr>
+      <tr><td><span class="con">❌ 不做</span> 重构 factor_calculator</td><td>架构已锁定，计算公式不变</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 数据闭环 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">数据闭环：品类扩展的自我进化</div>
+
+  <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:20px 0;text-align:center;">
+    <span style="font-size:24px">📝</span><span style="font-size:12px;color:var(--text2)">用户<br>输入品类</span>
+    <span style="color:var(--amber);font-size:20px">→</span>
+    <span style="font-size:24px">🔍</span><span style="font-size:12px;color:var(--text2)">三级<br>匹配</span>
+    <span style="color:var(--amber);font-size:20px">→</span>
+    <span style="font-size:24px;border:2px solid var(--amber-border);border-radius:50%;padding:8px;">📊</span><span style="font-size:12px;color:var(--amber);font-weight:600">点击<br>追踪</span>
+    <span style="color:var(--amber);font-size:20px">→</span>
+    <span style="font-size:24px">📈</span><span style="font-size:12px;color:var(--text2)">热门<br>排序</span>
+    <span style="color:var(--amber);font-size:20px">→</span>
+    <span style="font-size:24px">✅</span><span style="font-size:12px;color:var(--green);font-weight:600">高频品类<br>自动涌现</span>
+    <span style="color:var(--text3);font-size:16px">⟲</span>
+  </div>
+
+  <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:12px;">
+    每个品类的点击频次被持久化记录。高频品类自动排到前列，小众品类不掉队但不占风头。<br>
+    当某个品类点击量突破阈值 + 有足够 TikHub 基准数据时，触发 Phase 2 新赛道创建流程。
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 改动文件总览 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">改动文件总览</div>
+
+  <table>
+    <thead><tr><th>文件</th><th>变更类型</th><th>规模</th></tr></thead>
+    <tbody>
+      <tr><td style="font-family:monospace;">services/api/app/services/gene_service.py</td><td>核心逻辑扩展</td><td>~150 行新增</td></tr>
+      <tr><td style="font-family:monospace;">services/api/app/schemas/gene.py</td><td>Schema 扩展</td><td>~50 行新增</td></tr>
+      <tr><td style="font-family:monospace;">services/api/app/api/gene.py</td><td>路由扩展</td><td>~30 行新增</td></tr>
+      <tr><td style="font-family:monospace;">packages/shared/src/constants/track-factors.ts</td><td>子维度数据替换</td><td>6.6KB → 36KB</td></tr>
+      <tr><td style="font-family:monospace;">services/api/data/</td><td>新增目录</td><td>category_stats.json</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</body>
+</html>

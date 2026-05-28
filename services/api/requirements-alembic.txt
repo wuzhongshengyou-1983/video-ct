@@ -1,0 +1,10 @@
+# 最小依赖集 — 仅供 CI alembic migration check 使用
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+aiosqlite==0.20.0
+alembic==1.14.0
+psycopg2-binary==2.9.9
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+loguru==0.7.3

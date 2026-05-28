@@ -5,6 +5,14 @@ import { Lazyload, Toast, Dialog, Notify } from 'vant'
 import App from './App.vue'
 import router from './router'
 
+// Eruda 移动端调试面板 — 仅 DEV 环境加载，生产构建自动 tree-shake
+if (import.meta.env.DEV) {
+  import('eruda').then(({ default: eruda }) => {
+    eruda.init()
+    console.log('%c[video-ct] Eruda 已就绪 · 点击右下角按钮打开调试面板', 'color:#4ade80;font-weight:bold')
+  })
+}
+
 import 'vant/lib/index.css'
 import './styles/main.scss'
 

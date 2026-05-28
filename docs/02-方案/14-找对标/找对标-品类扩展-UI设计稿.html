@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>找对标 · 品类扩展 — UI 设计稿 v3</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+    background:#0f0f14;color:#e8e8ed;
+    display:flex;justify-content:center;align-items:flex-start;
+    min-height:100vh;padding:40px 0;
+  }
+  .app-wrap{
+    width:390px;max-width:100vw;background:#16161d;min-height:100vh;
+    border-radius:20px;overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 20px 60px rgba(0,0,0,0.5);
+  }
+  .header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px 12px;border-bottom:0.5px solid rgba(255,255,255,0.06);
+  }
+  .header__logo{font-size:13px;font-weight:700;color:#a0a0b0;letter-spacing:.03em}
+  .header__title{font-size:15px;font-weight:700}
+  .header__meta{font-size:10px;color:#505060;display:flex;align-items:center;gap:6px}
+  .scroll{padding:0 20px 40px}
+
+  /* Hero */
+  .hero-collapsed{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0 6px;transition:all .4s
+  }
+  .hero-collapsed__label{font-size:11px;color:#606070;letter-spacing:.03em;display:flex;align-items:center;gap:4px}
+
+  /* Steps */
+  .steps{display:flex;align-items:center;justify-content:center;gap:4px;padding-bottom:18px}
+  .step{font-size:11px;color:#606070;display:flex;align-items:center;gap:4px}
+  .step--active{color:#f59e0b;font-weight:600}
+  .step--done{color:#22c55e}
+  .step__num{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;background:rgba(255,255,255,.05);color:inherit}
+  .step--active .step__num{background:rgba(245,158,11,.15)}
+  .step--done .step__num{background:rgba(34,197,94,.12)}
+
+  /* Card */
+  .card{background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 16px;margin-bottom:14px}
+  .card--highlight{border-color:rgba(245,158,11,.18);background:rgba(245,158,11,.02)}
+
+  .field{padding:8px 0}
+  .field+.field{border-top:.5px solid rgba(255,255,255,.04);margin-top:4px;padding-top:14px}
+  .field__label{font-size:14px;font-weight:600;color:#b0b0c0;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field__hint{font-size:11px;color:#606070;font-weight:400}
+
+  /* Track grid */
+  .track-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .track-card{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:12px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.06);
+    background:rgba(255,255,255,.02);cursor:pointer;transition:all .15s;
+    text-align:center;position:relative;
+  }
+  .track-card--active{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35)}
+  .track-card__emoji{font-size:20px}
+  .track-card__label{font-size:12px;font-weight:600;color:#d0d0e0}
+  .track-card__data{font-size:9px;color:#606070}
+  .track-card__hot{position:absolute;top:-6px;right:-4px;padding:1px 5px;border-radius:6px;font-size:8px;font-weight:700;line-height:14px}
+  .track-card__hot--1{background:#ef4444;color:#fff}
+  .track-card__hot--2{background:#f59e0b;color:#0a0806}
+  .track-card__hot--3{background:#f59e0b;color:#0a0806}
+  .track-card__hot--trend{background:rgba(100,210,255,.2);color:#64d2ff}
+  .track-grid__footer{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;font-size:10px;color:#505060}
+
+  /* Search */
+  .cat-search-wrap{margin-top:14px;padding-top:14px;border-top:.5px solid rgba(255,255,255,.04)}
+  .cat-search-wrap__label{font-size:11px;color:#707080;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+  .new-badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);border:.5px solid rgba(245,158,11,.2)}
+  .cat-search{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);transition:border-color .2s}
+  .cat-search:focus-within{border-color:rgba(245,158,11,.4)}
+  .cat-search__icon{font-size:16px;flex-shrink:0;opacity:.5}
+  .cat-search__input{flex:1;background:none;border:none;outline:none;font-size:13px;color:#e8e8ed}
+  .cat-search__input::placeholder{color:#505060;font-size:12px}
+  .cat-search__hint{font-size:10px;color:#505060;margin-top:6px;line-height:1.5}
+
+  /* Match result */
+  .match-result{margin-top:10px;padding:12px 14px;border-radius:10px;display:flex;align-items:center;gap:10px}
+  .match-result--alias{background:rgba(245,158,11,.04);border-color:rgba(245,158,11,.15)}
+  .match-result--infer{background:rgba(100,210,255,.04);border-color:rgba(100,210,255,.15)}
+  .match-result__icon{font-size:20px;flex-shrink:0}
+  .match-result__body{flex:1;min-width:0}
+  .match-result__from{font-size:11px;color:#707080;margin-bottom:2px}
+  .match-result__from strong{color:#d0d0e0}
+  .match-result__to{font-size:13px;font-weight:700;color:#e8e8ed;display:flex;align-items:center;gap:6px}
+  .match-result__reason{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600}
+  .match-result__reason--alias{background:rgba(245,158,11,.12);color:#f59e0b}
+  .match-result__reason--infer{background:rgba(100,210,255,.12);color:#64d2ff}
+  .match-result__use{font-size:11px;font-weight:600;color:#f59e0b;cursor:pointer;padding:4px 10px;border-radius:6px;border:.5px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08);white-space:nowrap}
+
+  /* Pills */
+  .pills{display:flex;flex-wrap:wrap;gap:7px}
+  .pill{padding:7px 13px;border-radius:20px;border:1px solid rgba(255,255,255,.08);background:none;color:#b0b0c0;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+  .pill--active{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:#f59e0b;font-weight:600}
+  .sub-pill{flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-radius:10px;min-width:0;text-align:left}
+  .sub-pill__label{font-size:13px;font-weight:500}
+  .sub-pill__desc{font-size:10px;color:#606070}
+  .sub-pill__effects{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+  .sub-effect{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600}
+  .sub-effect--filter{background:rgba(100,210,255,.1);color:#64d2ff}
+  .sub-effect--precision{background:rgba(34,197,94,.1);color:#22c55e}
+  .sub-effect--method{background:rgba(168,130,255,.1);color:#a882ff}
+  .sub-effect--weight{background:rgba(245,158,11,.1);color:#f59e0b}
+
+  /* Hot strip */
+  .hot-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .hot-strip::-webkit-scrollbar{display:none}
+  .hot-strip__chip{flex-shrink:0;padding:4px 10px;border-radius:14px;font-size:10px;font-weight:500;cursor:pointer;white-space:nowrap;border:.5px solid rgba(255,255,255,.06);color:#9090a0;background:rgba(255,255,255,.02);transition:all .15s}
+  .hot-strip__chip--fire{border-color:rgba(239,68,68,.2);color:#ef4444;background:rgba(239,68,68,.05)}
+  .hot-strip__chip--rise{border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.05)}
+
+  /* Cat panel */
+  .cat-panel{margin-top:10px;padding:12px;border-radius:10px;background:rgba(255,255,255,.02);border:.5px solid rgba(255,255,255,.05)}
+  .cat-panel__title{font-size:10px;color:#606070;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+  .cat-panel__grid{display:flex;flex-wrap:wrap;gap:5px}
+  .cat-panel__chip{padding:3px 9px;border-radius:12px;font-size:10px;cursor:pointer;border:.5px solid rgba(255,255,255,.04);color:#808090;background:rgba(255,255,255,.015)}
+  .cat-panel__chip--core{border-color:rgba(245,158,11,.25);color:#f59e0b;font-weight:600}
+  .cat-panel__chip--inferred{border-style:dashed;color:#606070}
+
+  /* ── 子维度展示区 ── */
+  .subdim-showcase{margin-top:20px}
+  .subdim-showcase__header{font-size:13px;font-weight:700;color:#d0d0e0;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .subdim-track{ margin-bottom:14px;border-radius:12px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.05);overflow:hidden }
+  .subdim-track__head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;background:rgba(255,255,255,.02);
+    border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;
+  }
+  .subdim-track__head-left{display:flex;align-items:center;gap:8px}
+  .subdim-track__emoji{font-size:18px}
+  .subdim-track__name{font-size:13px;font-weight:700}
+  .subdim-track__map{font-size:10px;color:#707080;display:flex;align-items:center;gap:4px}
+  .subdim-track__arrow{color:#505060;font-size:14px}
+  .subdim-track__badge{padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600}
+  .subdim-track__body{padding:8px 14px 14px}
+  .subdim-block{margin-top:8px}
+  .subdim-block__label{font-size:11px;font-weight:600;color:#9090a0;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .subdim-block__dimkey{font-size:9px;color:#505060;font-weight:400}
+  .subdim-block__options{display:flex;flex-wrap:wrap;gap:5px}
+  .subdim-opt{
+    display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+    padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;
+    border:.5px solid rgba(255,255,255,.06);background:rgba(255,255,255,.015);color:#9090a0;
+    transition:all .15s;min-width:0;
+  }
+  .subdim-opt__label{font-weight:500;font-size:11px}
+  .subdim-opt__desc{font-size:9px;color:#606070}
+  .subdim-opt__fx{display:flex;gap:3px;margin-top:1px}
+  .subdim-opt__fx-tag{font-size:8px;padding:0 4px;border-radius:4px;font-weight:600}
+  .subdim-opt__fx-tag--f{background:rgba(100,210,255,.12);color:#64d2ff}
+  .subdim-opt__fx-tag--p{background:rgba(34,197,94,.12);color:#22c55e}
+  .subdim-opt__fx-tag--m{background:rgba(168,130,255,.12);color:#a882ff}
+  .subdim-opt__fx-tag--w{background:rgba(245,158,11,.12);color:#f59e0b}
+
+  /* Collapse chevron */
+  .chevron{font-size:10px;color:#505060;transition:transform .25s}
+  .chevron--open{transform:rotate(180deg)}
+
+  /* Badges */
+  .badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;white-space:nowrap}
+  .badge--core{background:rgba(245,158,11,.12);color:#f59e0b}
+  .badge--alias{background:rgba(245,158,11,.08);color:#f59e0b}
+  .badge--infer{background:rgba(100,210,255,.1);color:#64d2ff}
+  .badge--new{background:rgba(34,197,94,.1);color:#22c55e}
+
+  /* Divider */
+  .divider{display:flex;align-items:center;gap:10px;margin:24px 0 14px;color:#505060;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+  .divider::before,.divider::after{content:'';flex:1;height:.5px;background:rgba(255,255,255,.06)}
+
+  /* Legend */
+  .fx-legend{display:flex;gap:12px;margin-bottom:14px;font-size:9px;color:#606070}
+  .fx-legend__item{display:flex;align-items:center;gap:3px}
+  .fx-legend__dot{width:6px;height:6px;border-radius:2px}
+  .fx-legend__dot--f{background:#64d2ff}
+  .fx-legend__dot--p{background:#22c55e}
+  .fx-legend__dot--m{background:#a882ff}
+  .fx-legend__dot--w{background:#f59e0b}
+
+  /* Stats row */
+  .stats-row{display:flex;gap:8px;margin-bottom:14px}
+  .stat-chip{flex:1;padding:8px 10px;border-radius:8px;text-align:center;background:rgba(255,255,255,.02);border:.5px solid rgba(255,255,255,.04)}
+  .stat-chip__num{font-size:16px;font-weight:800;color:#f59e0b}
+  .stat-chip__label{font-size:9px;color:#606070;margin-top:2px}
+
+  .insight-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;margin-bottom:10px;background:rgba(100,210,255,.03);border:.5px solid rgba(100,210,255,.08);font-size:10px;color:#707080}
+  .insight-bar__strong{color:#64d2ff;font-weight:600}
+
+  .toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:11px;color:#707080}
+  .toggle-switch{width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.1);position:relative;cursor:pointer;transition:background .2s}
+  .toggle-switch--on{background:#f59e0b}
+  .toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+  .toggle-switch--on::after{transform:translateX(16px)}
+</style>
+</head>
+<body>
+
+<div class="app-wrap">
+
+  <!-- ═══ Header ═══ -->
+  <div class="header">
+    <span class="header__logo">🔥 火眼金睛</span>
+    <span class="header__title">找对标</span>
+    <span class="header__meta">已用 12 次</span>
+  </div>
+
+  <div class="scroll">
+
+  <!-- Hero collapsed (复访) -->
+  <div class="hero-collapsed">
+    <span class="hero-collapsed__label">🧬 找对标 · 已用 <strong style="color:#f59e0b">12</strong> 次</span>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step step--done"><span class="step__num">✓</span> 选赛道</div>
+    <span style="color:#505060;font-size:10px">›</span>
+    <div class="step step--active"><span class="step__num">2</span> 定维度</div>
+    <span style="color:#505060;font-size:10px">›</span>
+    <div class="step"><span class="step__num">3</span> 看结果</div>
+  </div>
+
+  <!-- ═══ Step 1: 动态热门赛道 ═══ -->
+  <div class="card card--highlight">
+    <div class="field">
+      <div class="field__label">选择你的赛道 <span class="field__hint">按创作者真实选择频次排序，每周刷新</span></div>
+      <div class="track-grid">
+        <div class="track-card"><span class="track-card__hot track-card__hot--1">🔥 1</span><span class="track-card__emoji">😂</span><span class="track-card__label">搞笑</span><span class="track-card__data">12,840 次</span></div>
+        <div class="track-card"><span class="track-card__hot track-card__hot--2">2</span><span class="track-card__emoji">🛒</span><span class="track-card__label">带货</span><span class="track-card__data">10,521 次</span></div>
+        <div class="track-card"><span class="track-card__hot track-card__hot--3">3</span><span class="track-card__emoji">🍔</span><span class="track-card__label">美食</span><span class="track-card__data">9,120 次</span></div>
+        <div class="track-card"><span class="track-card__hot track-card__hot--trend">↑</span><span class="track-card__emoji">📚</span><span class="track-card__label">知识</span><span class="track-card__data">8,315 次</span></div>
+        <div class="track-card"><span class="track-card__emoji">💄</span><span class="track-card__label">美妆</span><span class="track-card__data">7,240 次</span></div>
+        <div class="track-card track-card--active"><span class="track-card__emoji">💃</span><span class="track-card__label">舞蹈</span><span class="track-card__data">6,842 次</span></div>
+        <div class="track-card"><span class="track-card__emoji">🎙️</span><span class="track-card__label">口播</span><span class="track-card__data">5,630 次</span></div>
+        <div class="track-card"><span class="track-card__emoji">📹</span><span class="track-card__label">Vlog</span><span class="track-card__data">5,390 次</span></div>
+      </div>
+
+      <!-- Search + 热门搜索 -->
+      <div class="cat-search-wrap">
+        <div class="cat-search-wrap__label"><span class="new-badge">NEW</span> 你的品类不在这 8 个里？直接搜</div>
+        <div class="cat-search">
+          <span class="cat-search__icon">🔍</span>
+          <input class="cat-search__input" placeholder="如「萌宠」「健身」「游戏」「职场」…" />
+        </div>
+        <div style="margin-top:8px">
+          <div style="font-size:10px;color:#505060;margin-bottom:4px">🔥 最近大家在搜：</div>
+          <div class="hot-strip">
+            <span class="hot-strip__chip hot-strip__chip--fire">🔥 舞蹈</span>
+            <span class="hot-strip__chip hot-strip__chip--rise">↑ 健身</span>
+            <span class="hot-strip__chip">萌宠</span>
+            <span class="hot-strip__chip hot-strip__chip--rise">↑ 游戏</span>
+            <span class="hot-strip__chip">职场</span>
+            <span class="hot-strip__chip">三农</span>
+            <span class="hot-strip__chip">情感</span>
+            <span class="hot-strip__chip">二次元</span>
+            <span class="hot-strip__chip">旅游</span>
+            <span class="hot-strip__chip hot-strip__chip--fire">🔥 汽车</span>
+            <span class="hot-strip__chip">手工</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  ⭐ 子维度：舞蹈品类完整展示（含联动效果）                     -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="field">
+      <div class="field__label">平台 <span class="field__hint">你的对标平台</span></div>
+      <div class="pills">
+        <span class="pill pill--active">⚡ 抖音</span>
+        <span class="pill">📺 B站</span>
+        <span class="pill">📕 小红书</span>
+      </div>
+    </div>
+
+    <!-- 子维度 1：舞蹈类型 -->
+    <div class="field">
+      <div class="field__label">
+        舞蹈类型
+        <span class="field__hint">你跳什么舞？</span>
+        <span class="badge badge--infer">完善签名</span>
+      </div>
+      <div class="pills">
+        <span class="pill sub-pill pill--active">
+          <span class="sub-pill__label">编舞 / K-Pop</span>
+          <span class="sub-pill__desc">韩舞、编舞cover</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+            <span class="sub-effect sub-effect--precision">📊 精度+2</span>
+            <span class="sub-effect sub-effect--method">📐 方法论</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">街舞 / Urban</span>
+          <span class="sub-pill__desc">Hip-hop、Popping、Locking</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">古典 / 民族舞</span>
+          <span class="sub-pill__desc">中国舞、芭蕾、现代</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">宅舞 / ACG</span>
+          <span class="sub-pill__desc">B站宅舞区、cosplay舞</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">拉丁 / 国标</span>
+          <span class="sub-pill__desc">拉丁舞、摩登舞</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 子维度 2：视频形式 -->
+    <div class="field">
+      <div class="field__label">视频形式 <span class="field__hint">你怎么拍舞蹈视频？</span></div>
+      <div class="pills">
+        <span class="pill sub-pill pill--active">
+          <span class="sub-pill__label">教程 / 分解教学</span>
+          <span class="sub-pill__desc">慢速拆解、镜面教学</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+            <span class="sub-effect sub-effect--method">📐 方法论</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">纯表演 / 作品</span>
+          <span class="sub-pill__desc">完整舞蹈作品展示</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">跟练 / 挑战</span>
+          <span class="sub-pill__desc">#舞蹈挑战 类</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+            <span class="sub-effect sub-effect--precision">📊 精度+1</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">舞蹈Vlog</span>
+          <span class="sub-pill__desc">日常练舞、排练记录</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 子维度 3：舞者类型 -->
+    <div class="field">
+      <div class="field__label">舞者类型 <span class="field__hint">你的身份是？</span></div>
+      <div class="pills">
+        <span class="pill sub-pill pill--active">
+          <span class="sub-pill__label">舞蹈老师/教练</span>
+          <span class="sub-pill__desc">专业教学向</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+            <span class="sub-effect sub-effect--method">📐 方法论</span>
+            <span class="sub-effect sub-effect--weight">⚖️ 权重</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">舞者/爱好者</span>
+          <span class="sub-pill__desc">作品展示向</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">零基础入门</span>
+          <span class="sub-pill__desc">记录进步向</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 子维度 4：时长 -->
+    <div class="field">
+      <div class="field__label">视频时长 <span class="field__hint">通常多长？</span></div>
+      <div class="pills">
+        <span class="pill sub-pill pill--active">
+          <span class="sub-pill__label">15-30秒</span>
+          <span class="sub-pill__desc">副歌片段</span>
+          <span class="sub-pill__effects">
+            <span class="sub-effect sub-effect--filter">🎯 对标池</span>
+            <span class="sub-effect sub-effect--precision">📊 精度+1</span>
+          </span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">30-60秒</span>
+          <span class="sub-pill__desc">完整副歌</span>
+          <span class="sub-pill__effects"><span class="sub-effect sub-effect--filter">🎯 对标池</span></span>
+        </span>
+        <span class="pill sub-pill">
+          <span class="sub-pill__label">1-3分钟</span>
+          <span class="sub-pill__desc">完整编舞</span>
+          <span class="sub-pill__effects"><span class="sub-effect sub-effect--filter">🎯 对标池</span></span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="margin-bottom:14px">
+    <button style="width:100%;padding:14px;border-radius:10px;border:none;background:linear-gradient(135deg,#f59e0b,#e8920a);color:#0a0806;font-size:15px;font-weight:700;cursor:pointer;text-align:center;display:block">开始量化分析</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  ⭐ 子维度全景：所有品类的完整子维度方案                         -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="divider">▎ 子维度完整方案 — 全部 23 个品类</div>
+
+  <!-- 统计概览 -->
+  <div class="stats-row">
+    <div class="stat-chip"><div class="stat-chip__num">23</div><div class="stat-chip__label">支持品类</div></div>
+    <div class="stat-chip"><div class="stat-chip__num">92</div><div class="stat-chip__label">子维度总数</div></div>
+    <div class="stat-chip"><div class="stat-chip__num">381</div><div class="stat-chip__label">选项总数</div></div>
+    <div class="stat-chip"><div class="stat-chip__num">4</div><div class="stat-chip__label">联动类型</div></div>
+  </div>
+
+  <!-- 图例 -->
+  <div class="fx-legend">
+    <div class="fx-legend__item"><span class="fx-legend__dot fx-legend__dot--f"></span> 筛选对标池</div>
+    <div class="fx-legend__item"><span class="fx-legend__dot fx-legend__dot--p"></span> 提升精度</div>
+    <div class="fx-legend__item"><span class="fx-legend__dot fx-legend__dot--m"></span> 影响方法论排序</div>
+    <div class="fx-legend__item"><span class="fx-legend__dot fx-legend__dot--w"></span> 调整因子权重</div>
+  </div>
+
+  <!-- ═══ 每一个品类展开一个折叠卡片 ═══ -->
+  <div class="subdim-showcase">
+
+    <!-- ===== 8 大核心赛道 ===== -->
+    <div class="subdim-showcase__header">8 大核心赛道 <span class="badge badge--core">精确匹配</span></div>
+
+    <!-- 搞笑 -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">😂</span><span class="subdim-track__name">搞笑</span><span class="badge badge--core">核心</span></div>
+        <span class="chevron chevron--open">▾</span>
+      </div>
+      <div class="subdim-track__body">
+        <div class="subdim-block">
+          <div class="subdim-block__label">搞笑类型 <span class="subdim-block__dimkey">comedy_type</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">段子/脱口秀</span><span class="subdim-opt__desc">单人输出笑点</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">整蛊/恶搞</span><span class="subdim-opt__desc">猝不及防反转</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">搞笑短剧</span><span class="subdim-opt__desc">有情节的搞笑</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">配音/模仿</span><span class="subdim-opt__desc">创意配音、模仿秀</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">街头采访</span><span class="subdim-opt__desc">素人互动笑点</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">萌娃搞笑</span><span class="subdim-opt__desc">小孩/宠物出糗</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block">
+          <div class="subdim-block__label">时长 <span class="subdim-block__dimkey">duration</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">&lt;15秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--p">📊</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">15-30秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">30-60秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">&gt;60秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block">
+          <div class="subdim-block__label">出镜人数 <span class="subdim-block__dimkey">cast_size</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">单人</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">双人</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">多人</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 带货 -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">🛒</span><span class="subdim-track__name">带货</span><span class="badge badge--core">核心</span></div>
+        <span class="chevron chevron--open">▾</span>
+      </div>
+      <div class="subdim-track__body">
+        <div class="subdim-block">
+          <div class="subdim-block__label">带货品类 <span class="subdim-block__dimkey">product_category</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">美妆个护</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">3C数码</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">食品饮料</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">服饰穿搭</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">家居日用</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">母婴用品</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">图书教育</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">珠宝文玩</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block">
+          <div class="subdim-block__label">内容形式 <span class="subdim-block__dimkey">content_form</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">纯展示</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">测评对比</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">剧情植入</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">直播切片</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">口播种草</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block">
+          <div class="subdim-block__label">价格带 <span class="subdim-block__dimkey">price_range</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">50元以下</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">50-200元</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">200-500元</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">500元以上</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 知识 (expanded) -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">📚</span><span class="subdim-track__name">知识</span><span class="badge badge--core">核心</span></div>
+        <span class="chevron chevron--open">▾</span>
+      </div>
+      <div class="subdim-track__body">
+        <div class="subdim-block">
+          <div class="subdim-block__label">知识领域 <span class="subdim-block__dimkey">domain</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">商业财经</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">科技互联网</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">人文历史</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">生活技巧</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">职业技能</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--p">📊</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">社会观察</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">心理学</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">法律/政务</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block">
+          <div class="subdim-block__label">内容深度 <span class="subdim-block__dimkey">depth</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">入门科普</span><span class="subdim-opt__desc">0基础可理解</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">进阶方法</span><span class="subdim-opt__desc">需一定基础</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">专业深析</span><span class="subdim-opt__desc">面向业内人士</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block">
+          <div class="subdim-block__label">呈现形式 <span class="subdim-block__dimkey">presentation</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">纯口播</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">图文辅助</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">动画演示</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">实地拍摄</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 折叠其余核心赛道 ═══ -->
+
+    <!-- 口播 (expanded) -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">🎙️</span><span class="subdim-track__name">口播</span><span class="badge badge--core">核心</span></div>
+        <span class="chevron">▸</span>
+      </div>
+      <div class="subdim-track__body" style="display:none">
+        <div class="subdim-block">
+          <div class="subdim-block__label">内容类型 <span class="subdim-block__dimkey">content_type</span></div>
+          <div class="subdim-block__options">
+            <span class="subdim-opt"><span class="subdim-opt__label">观点输出</span><span class="subdim-opt__desc">评论时事</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">故事叙述</span><span class="subdim-opt__desc">讲故事/经历</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">情感共鸣</span><span class="subdim-opt__desc">心灵鸡汤</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">干货教程</span><span class="subdim-opt__desc">教技能方法</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">玄学/星座</span><span class="subdim-opt__desc">塔罗、星座运势</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+            <span class="subdim-opt"><span class="subdim-opt__label">新闻/热点评论</span><span class="subdim-opt__desc">时事热评</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span>
+          </div>
+        </div>
+        <div class="subdim-block"><div class="subdim-block__label">时长区间 <span class="subdim-block__dimkey">duration</span></div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">&lt;30秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">30-60秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">1-3分钟</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">&gt;3分钟</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--p">📊</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">出镜形式 <span class="subdim-block__dimkey">format</span></div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">单人直面</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">双人对谈</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">多人讨论</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- ===== 新增品类: 别名映射 ===== -->
+    <div class="subdim-showcase__header" style="margin-top:20px">别名映射品类 <span class="badge badge--alias">15 个新品类</span></div>
+
+    <!-- 舞蹈 → Vlog -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">💃</span><span class="subdim-track__name">舞蹈</span><span class="subdim-track__map"><span class="subdim-track__arrow">→</span>📹 Vlog</span><span class="badge badge--infer">签名推断</span></div>
+        <span class="chevron chevron--open">▾</span>
+      </div>
+      <div class="subdim-track__body">
+        <div class="subdim-block"><div class="subdim-block__label">舞蹈类型</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">编舞/K-Pop</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--p">📊</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">街舞/Urban</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">古典/民族</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">宅舞/ACG</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">拉丁/国标</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">视频形式</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">教程/教学</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">纯表演/作品</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">跟练/挑战</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--p">📊</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">舞蹈Vlog</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">舞者类型</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">舞蹈老师/教练</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">舞者/爱好者</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">零基础入门</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">视频时长</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">15-30秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--p">📊</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">30-60秒</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">1-3分钟</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- 健身 → Vlog -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">🏋️</span><span class="subdim-track__name">健身/运动</span><span class="subdim-track__map"><span class="subdim-track__arrow">→</span>📹 Vlog</span><span class="badge badge--alias">别名映射</span></div>
+        <span class="chevron">▸</span>
+      </div>
+      <div class="subdim-track__body" style="display:none">
+        <div class="subdim-block"><div class="subdim-block__label">运动类型</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">力量训练</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">瑜伽/普拉提</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">有氧/HIIT</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">跑步/马拉松</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">球类运动</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">内容形式</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">跟练教学</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">干货科普</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">身材展示</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">训练Vlog</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">健身阶段</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">新手入门</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">进阶塑形</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">竞技/备赛</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- 萌宠 → Vlog -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">🐱</span><span class="subdim-track__name">萌宠</span><span class="subdim-track__map"><span class="subdim-track__arrow">→</span>📹 Vlog</span><span class="badge badge--alias">别名映射</span></div>
+        <span class="chevron">▸</span>
+      </div>
+      <div class="subdim-track__body" style="display:none">
+        <div class="subdim-block"><div class="subdim-block__label">宠物类型</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">猫</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">狗</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">异宠/小宠</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">野生动物</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">内容方向</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">日常/卖萌</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">养护/科普</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">剧情/配音</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">救助/公益</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">拍摄风格</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">治愈慢节奏</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">搞笑快节奏</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">纪实/科普</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- 游戏 → 搞笑 -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">🎮</span><span class="subdim-track__name">游戏</span><span class="subdim-track__map"><span class="subdim-track__arrow">→</span>😂 搞笑</span><span class="badge badge--infer">签名推断</span></div>
+        <span class="chevron">▸</span>
+      </div>
+      <div class="subdim-track__body" style="display:none">
+        <div class="subdim-block"><div class="subdim-block__label">游戏类型</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">MOBA</span><span class="subdim-opt__desc">王者/LOL</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">射击/FPS</span><span class="subdim-opt__desc">吃鸡/CS</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">主机/单机</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">二次元手游</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">休闲/小游戏</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">内容方向</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">搞笑/节目效果</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">攻略/教学</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">电竞赛事</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">游戏杂谈</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">出镜方式</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">真人露脸</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">纯画面+配音</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">虚拟主播</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- 职场 → 知识 -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">💼</span><span class="subdim-track__name">职场</span><span class="subdim-track__map"><span class="subdim-track__arrow">→</span>📚 知识</span><span class="badge badge--alias">别名映射</span></div>
+        <span class="chevron">▸</span>
+      </div>
+      <div class="subdim-track__body" style="display:none">
+        <div class="subdim-block"><div class="subdim-block__label">职场阶段</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">求职/面试</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">职场新人</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">中层管理</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">创业/自由职业</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">内容方向</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">求职技巧</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">办公室日常</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">管理/领导力</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">副业/赚钱</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">呈现形式</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">口播干货</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">情景短剧</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">Vlog记录</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- 旅游 → Vlog -->
+    <div class="subdim-track">
+      <div class="subdim-track__head" onclick="this.querySelector('.chevron').classList.toggle('chevron--open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="subdim-track__head-left"><span class="subdim-track__emoji">✈️</span><span class="subdim-track__name">旅游/户外</span><span class="subdim-track__map"><span class="subdim-track__arrow">→</span>📹 Vlog</span><span class="badge badge--alias">别名映射</span></div>
+        <span class="chevron">▸</span>
+      </div>
+      <div class="subdim-track__body" style="display:none">
+        <div class="subdim-block"><div class="subdim-block__label">目的地类型</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">城市/探店</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">自然/风光</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">露营/徒步</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">海外/出境</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">内容形式</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">攻略/清单</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--m">📐</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">沉浸体验</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span><span class="subdim-opt__fx-tag subdim-opt__fx-tag--w">⚖️</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">避坑/测评</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+        <div class="subdim-block"><div class="subdim-block__label">出行方式</div><div class="subdim-block__options"><span class="subdim-opt"><span class="subdim-opt__label">自驾</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">公共交通</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span><span class="subdim-opt"><span class="subdim-opt__label">骑行/摩旅</span><span class="subdim-opt__fx"><span class="subdim-opt__fx-tag subdim-opt__fx-tag--f">🎯</span></span></span></div></div>
+      </div>
+    </div>
+
+    <!-- ── 压缩展示其余 10 个品类（一行一品类节省空间） ── -->
+    <div style="font-size:10px;color:#505060;margin:12px 0 6px;text-align:center">… 还有 10 个品类，各有 3-4 个子维度 …</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">👶 母婴→知识 <span style="color:#f59e0b">别名</span> · 4 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🎓 教育→知识 <span style="color:#f59e0b">别名</span> · 4 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">💰 财经→知识 <span style="color:#f59e0b">别名</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🎵 音乐→Vlog <span style="color:#f59e0b">别名</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">⚽ 体育→Vlog <span style="color:#f59e0b">别名</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">👗 穿搭→美妆 <span style="color:#f59e0b">别名</span> · 4 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">💻 数码→带货 <span style="color:#f59e0b">别名</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🚗 汽车→知识 <span style="color:#f59e0b">别名</span> · 4 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">❤️ 情感→口播 <span style="color:#f59e0b">别名</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🌾 三农→Vlog <span style="color:#f59e0b">别名</span> · 4 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🎨 绘画→Vlog <span style="color:#64d2ff">推断</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🛠️ 手工→Vlog <span style="color:#64d2ff">推断</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🔮 玄学→口播 <span style="color:#64d2ff">推断</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">⚖️ 法律→知识 <span style="color:#64d2ff">推断</span> · 3 dims</span>
+      <span style="padding:3px 8px;border-radius:8px;font-size:9px;background:rgba(255,255,255,.015);border:.5px solid rgba(255,255,255,.04);color:#808090">🏥 健康→知识 <span style="color:#64d2ff">推断</span> · 4 dims</span>
+    </div>
+
+  </div><!-- /subdim-showcase -->
+
+  <!-- 数据闭环 -->
+  <div class="insight-bar" style="margin-top:14px">
+    <span style="font-size:13px">📊</span>
+    <span>每个品类的子维度选择频次都会被后台记录。<span class="insight-bar__strong">热门选项自动提升为该品类的默认推荐</span>，小众选项不会被淘汰但排序靠后。</span>
+  </div>
+
+  </div><!-- /scroll -->
+</div><!-- /app-wrap -->
+
+</body>
+</html>

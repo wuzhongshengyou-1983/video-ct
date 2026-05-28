@@ -25,6 +25,9 @@ class Diagnosis(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # v3 Phase 0 — 账号关联
+    account_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("account_entities.id", ondelete="SET NULL"), nullable=True, index=True)
+    diagnosis_sequence: Mapped[int] = mapped_column(Integer, nullable=True, default=0)  # 同账号第几次诊断
 
 
 class Report(Base):

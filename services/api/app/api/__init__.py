@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from app.api import (
     auth, users, subscription, diagnosis, benchmark,
     archive, persona, positioning, referrer, ai, admin, webhook, analytics, wechat, upload,
+    events, accounts,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -22,3 +23,5 @@ api_router.include_router(webhook.router, prefix="/webhooks", tags=["webhook"])
 api_router.include_router(analytics.router, tags=["analytics"])
 api_router.include_router(wechat.router, prefix="/wechat", tags=["wechat"])
 api_router.include_router(upload.router, prefix="/upload", tags=["upload"])
+api_router.include_router(events.router, tags=["events"])
+api_router.include_router(accounts.router, prefix="/accounts", tags=["accounts"])

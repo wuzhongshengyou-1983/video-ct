@@ -1,0 +1,4 @@
+# PDF 生成依赖（需系统级 libcairo / libpango）
+# 安装前请先: sudo apt-get install -y libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0
+-r requirements.txt
+weasyprint==63.0

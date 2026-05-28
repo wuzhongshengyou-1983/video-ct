@@ -83,3 +83,30 @@ async def submit_feedback(
     report.user_feedback = payload.feedback
     await db.commit()
     return {"ok": True}
+
+
+@router.post("/{diagnosis_id}/resubmit", response_model=DiagnosisOut)
+async def resubmit(diagnosis_id: int, bg: BackgroundTasks, db: DbSession, user: CurrentUser):
+    """复诊：基于已有诊断重新提交同一视频，自动追踪改善对比。"""
+    res = await db.execute(
+        select(Diagnosis).where(Diagnosis.id == diagnosis_id, Diagnosis.user_id == user.id)
+    )
+    original = res.scalar_one_or_none()
+    if not original:
+        raise NotFoundError("diagnosis")
+
+    meta = dict(original.video_meta or {})
+    meta["parent_diagnosis_id"] = diagnosis_id
+
+    new_diag = await diagnosis_service.create_diagnosis(
+        db,
+        user=user,
+        video_url=original.video_url,
+        track=original.video_meta.get("track") if original.video_meta else None,
+        diagnosis_type=original.diagnosis_type,
+    )
+    new_diag.video_meta = meta
+    await db.commit()
+    await db.refresh(new_diag)
+    bg.add_task(_bg_run, new_diag.id)
+    return DiagnosisOut.model_validate(new_diag)

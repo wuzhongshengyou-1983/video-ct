@@ -1,8 +1,8 @@
 {
-  "name": "@video-ct/docs",
+  "name": "@video-ct/open",
   "version": "0.1.0",
   "private": true,
-  "description": "视频 CT · 开发者文档站（开放端）",
+  "description": "视频 CT · 开放端文档站（API 参考 + SDK + 开发者指南）",
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",

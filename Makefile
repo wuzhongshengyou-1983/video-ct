@@ -88,7 +88,7 @@ seed: db-seed
 # ===================== 备份恢复 =====================
 
 backup:
-	bash scripts/backup-db.sh
+	bash scripts/db/backup-db.sh
 
 restore:
 	@if [ -z "$(FILE)" ]; then \
@@ -97,7 +97,7 @@ restore:
 		ls -lh backups/video_ct_*.dump 2>/dev/null || echo "  (无备份文件)"; \
 		exit 1; \
 	fi
-	bash scripts/restore-db.sh "$(FILE)"
+	bash scripts/db/restore-db.sh "$(FILE)"
 
 # ===================== Lint / Test / Clean =====================
 

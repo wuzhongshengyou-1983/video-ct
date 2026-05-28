@@ -1,0 +1,67 @@
+# =============================================================================
+# Video CT · Release 自动化
+# 触发: push tag v* (与 CD 同步触发，但独立 job)
+# 功能: 从 CHANGELOG.md 提取本版本内容 → 自动创建 GitHub Release
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          # 提取 CHANGELOG.md 中对应版本段落
+          # 格式: ## [v0.3.0] YYYY-MM-DD ... (到下一个 ## 为止)
+          NOTES=$(awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            NOTES="本版本变更详见 [CHANGELOG.md](CHANGELOG.md)"
+          fi
+
+          # 写到文件（避免多行字符串在 env 中截断）
+          echo "$NOTES" > /tmp/release_notes.md
+          echo "NOTES_FILE=/tmp/release_notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Get commit count since last tag
+        id: commits
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            COUNT=$(git rev-list ${PREV_TAG}..HEAD --count)
+            echo "COUNT=${COUNT} commits since ${PREV_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "COUNT=初始版本" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: "Video CT ${{ steps.version.outputs.VERSION }}"
+          body_path: ${{ steps.changelog.outputs.NOTES_FILE }}
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
