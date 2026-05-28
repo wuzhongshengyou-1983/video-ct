@@ -101,7 +101,7 @@ jobs:
         working-directory: apps/${{ matrix.app }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
       - uses: pnpm/action-setup@v4
@@ -173,7 +173,7 @@ jobs:
         working-directory: tests/e2e
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
       - uses: pnpm/action-setup@v4
@@ -193,7 +193,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
       - uses: pnpm/action-setup@v4
