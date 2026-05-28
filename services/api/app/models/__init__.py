@@ -9,6 +9,8 @@ from app.models.positioning import Positioning
 from app.models.referrer import ReferrerLink, ReferrerLevel, RewardAccount, RewardTransaction
 from app.models.coupon import Coupon, CouponRedemption
 from app.models.event_log import EventLog
+from app.models.video_metrics import VideoMetrics
+from app.models.account import AccountEntity, AccountHealthSnapshot, RecurringIssue
 
 __all__ = [
     "User", "UserProfile",
@@ -20,4 +22,6 @@ __all__ = [
     "ReferrerLink", "ReferrerLevel", "RewardAccount", "RewardTransaction",
     "Coupon", "CouponRedemption",
     "EventLog",
+    "VideoMetrics",
+    "AccountEntity", "AccountHealthSnapshot", "RecurringIssue",
 ]
