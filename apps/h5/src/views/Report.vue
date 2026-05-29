@@ -122,7 +122,7 @@
               class="gap-item"
             >
               <div class="gap-label">
-                {{ (k as string).replace("_gap_pct", "").replace("_", "") }}
+                {{ String(k).replace("_gap_pct", "").replace("_", "") }}
               </div>
               <div class="gap-bar">
                 <div
@@ -179,7 +179,11 @@
         <!-- Tab 1：竞品 DNA -->
         <van-tab title="🧬 竞品 DNA" name="dna">
           <div class="dna-tab-wrap">
-            <ViralDnaCard :data="viralDnaData" :loading="viralDnaLoading" />
+            <ViralDnaCard
+              :data="viralDnaData"
+              :loading="viralDnaLoading"
+              :track="diagnosisTrack || undefined"
+            />
           </div> </van-tab
         ><!-- end Tab 1 --> </van-tabs
       ><!-- end van-tabs -->
@@ -219,6 +223,7 @@ const activeTab = ref("report");
 // ---- 爆火 DNA ----
 const viralDnaData = ref<ViralDnaResult | null>(null);
 const viralDnaLoading = ref(false);
+const diagnosisTrack = ref<string>("");
 
 async function loadViralDna() {
   if (viralDnaData.value || viralDnaLoading.value) return;
@@ -375,20 +380,10 @@ function share() {
     );
     updateShare(title, desc, `/report/${id}`);
   }
-  Toast("已设置分享卡片，点击右上角分享给你的朋友");
+  Toast.success("已设置分享卡片，点击右上角分享给你的朋友");
 }
 
 onMounted(async () => {
-  // 0. 后台静默拉取 diagnosis 获取 track（供爆火 DNA 使用）
-  diagnosisApi
-    .get(id)
-    .then((diag: any) => {
-      if (diag?.track) diagnosisTrack.value = diag.track;
-    })
-    .catch(() => {
-      /* 静默失败，loadViralDna 会用默认 track */
-    });
-
   // 1. 先展示缓存版本（如有）
   const cached = loadCachedReport();
   if (cached) {

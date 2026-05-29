@@ -108,6 +108,8 @@ export const benchmarkApi = {
       diagnosis_id,
       track,
     }),
+  remix: (track: string, viral_dna: any) =>
+    http.post<unknown, any>("/api/v1/benchmarks/remix", { track, viral_dna }),
   topics: (track: string) =>
     http.get<unknown, { topics: any[] }>(
       `/api/v1/benchmarks/topics/${encodeURIComponent(track)}`,

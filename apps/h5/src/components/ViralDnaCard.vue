@@ -122,11 +122,59 @@
         </div>
       </div>
     </section>
+
+    <!-- 6. 生成复刻方案 -->
+    <section class="vct-card remix-section">
+      <van-button
+        block
+        type="primary"
+        :loading="remixLoading"
+        :disabled="remixLoading"
+        @click="generateRemix"
+        class="remix-btn"
+      >
+        🎬 生成我的复刻方案
+      </van-button>
+
+      <!-- 复刻结果折叠卡片 -->
+      <div v-if="remixSegments.length" class="remix-result">
+        <div class="remix-result-title">🎞️ 复刻剧本</div>
+        <div v-for="(seg, i) in remixSegments" :key="i" class="remix-seg-item">
+          <div class="remix-seg-head" @click="toggleRemixSeg(i)">
+            <div class="remix-seg-left">
+              <span class="remix-stage-tag">{{ seg.stage }}</span>
+              <span class="remix-duration">{{ seg.duration }}</span>
+              <span class="remix-function">{{ seg.function }}</span>
+            </div>
+            <van-icon
+              :name="expandedRemix[i] ? 'arrow-up' : 'arrow-down'"
+              size="14"
+            />
+          </div>
+          <div v-show="expandedRemix[i]" class="remix-seg-body">
+            <div class="remix-field">
+              <span class="remix-field-label">台词</span>
+              <span class="remix-field-val">{{ seg.script }}</span>
+            </div>
+            <div class="remix-field">
+              <span class="remix-field-label">镜头</span>
+              <span class="remix-field-val">{{ seg.shot }}</span>
+            </div>
+            <div class="remix-field why">
+              <span class="remix-field-label">为什么</span>
+              <span class="remix-field-val">{{ seg.why }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { Toast } from "vant";
+import { benchmarkApi } from "@/api";
 
 // ---- 类型定义 ----
 export interface ViralDnaDimension {
@@ -166,18 +214,68 @@ export interface ViralDnaResult {
   transform: string[];
 }
 
+interface RemixSegment {
+  stage: string;
+  duration: string;
+  function: string;
+  script: string;
+  shot: string;
+  why: string;
+}
+
 interface Props {
   data: ViralDnaResult | null;
   loading: boolean;
+  track?: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: "remix-request", payload: { track: string; viral_dna: any }): void;
+}>();
 
 // ---- 因子折叠状态 ----
 const expandedFactors = ref<boolean[]>([true, false, false]);
 
 function toggleFactor(i: number) {
   expandedFactors.value[i] = !expandedFactors.value[i];
+}
+
+// ---- 复刻方案状态 ----
+const remixLoading = ref(false);
+const remixSegments = ref<RemixSegment[]>([]);
+const expandedRemix = ref<boolean[]>([]);
+
+function toggleRemixSeg(i: number) {
+  expandedRemix.value[i] = !expandedRemix.value[i];
+}
+
+async function generateRemix() {
+  if (!props.data) return;
+  const track = props.track || props.data.competitor.platform || "通用";
+  const viral_dna = {
+    competitor_nickname: props.data.competitor.nickname,
+    viral_score: props.data.viral_score,
+    top_factors: props.data.top_factors,
+    dimensions: props.data.dimensions,
+  };
+
+  emit("remix-request", { track, viral_dna });
+
+  remixLoading.value = true;
+  try {
+    const result = await benchmarkApi.remix(track, viral_dna);
+    remixSegments.value = result.segments ?? [];
+    expandedRemix.value = remixSegments.value.map((_, i) => i === 0);
+    if (!remixSegments.value.length) {
+      Toast.fail("暂时没有生成到剧本，请稍后重试");
+    }
+  } catch (e: any) {
+    Toast.fail(e.message || "复刻方案生成失败，请稍后重试");
+  } finally {
+    remixLoading.value = false;
+  }
 }
 
 // ---- 工具函数 ----
@@ -532,5 +630,107 @@ function scoreCls(score: number): string {
   &.transform {
     border: 1px solid rgba(56, 189, 248, 0.3);
   }
+}
+
+/* ---- 复刻方案 ---- */
+.remix-section {
+  padding: 16px;
+}
+
+.remix-btn {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  border: none;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.remix-result {
+  margin-top: 16px;
+}
+
+.remix-result-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--vct-primary, #f59e0b);
+}
+
+.remix-seg-item {
+  border: 1px solid var(--vct-border, #3a3a4c);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.remix-seg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--vct-surface, #2a2a3c);
+  cursor: pointer;
+  user-select: none;
+}
+
+.remix-seg-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.remix-stage-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--vct-primary, #f59e0b);
+  flex-shrink: 0;
+}
+
+.remix-duration {
+  font-size: 11px;
+  color: var(--vct-text-2, #9ca3af);
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.remix-function {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.remix-seg-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.remix-field {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+
+  &.why {
+    padding-top: 6px;
+    border-top: 1px dashed var(--vct-border, #3a3a4c);
+  }
+}
+
+.remix-field-label {
+  color: var(--vct-text-2, #9ca3af);
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.remix-field-val {
+  color: var(--vct-text, #e5e7eb);
 }
 </style>
