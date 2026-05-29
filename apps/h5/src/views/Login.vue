@@ -106,12 +106,28 @@ const wechatLoading = ref(false);
 const isWechatEnv = ref(false);
 const referrer = ref<string | null>(null);
 
-onMounted(() => {
+// TESTING: 内测阶段自动填入测试账号，正式公测前删除此块
+const TEST_PHONE = "13800138000";
+
+onMounted(async () => {
   isWechatEnv.value = isWechat();
   referrer.value =
     localStorage.getItem("vct_ref") || (route.query.ref as string) || null;
   if (referrer.value && !localStorage.getItem("vct_ref")) {
     localStorage.setItem("vct_ref", referrer.value);
+  }
+
+  // 自动填入测试手机号并发送 OTP
+  phone.value = TEST_PHONE;
+  try {
+    const r = await authApi.sendOtp(TEST_PHONE);
+    if (r.dev_code) {
+      code.value = r.dev_code;
+      // 自动登录
+      await login();
+    }
+  } catch {
+    // 自动登录失败时保持手机号，用户手动操作
   }
 });
 
