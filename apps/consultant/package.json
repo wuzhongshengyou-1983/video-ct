@@ -18,7 +18,7 @@
     "@ant-design/icons-vue": "^7.0.1",
     "axios": "^1.7.9",
     "echarts": "^5.5.1",
-    "vue-echarts": "^7.0.3",
+    "vue-echarts": "^8.0.1",
     "dayjs": "^1.11.13",
     "@video-ct/shared": "workspace:*"
   },
