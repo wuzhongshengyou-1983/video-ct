@@ -5,6 +5,8 @@ POST /api/v1/analytics/events — 接收批量埋点事件，写入 event_logs �
 """
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import text
@@ -49,7 +51,7 @@ async def receive_events(
         params = {
             "user_id": item.user_id,
             "event_type": item.event,
-            "payload": item.properties,
+            "payload": json.dumps(item.properties) if item.properties else None,
             "ip": client_ip,
             "user_agent": user_agent,
         }
