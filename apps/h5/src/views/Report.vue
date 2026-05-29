@@ -232,6 +232,7 @@ async function loadViralDna() {
     const result = await benchmarkApi.viralDna(id);
     // 后端返回 { track, competitor_nickname, viral_score, dimensions, ... }
     // ViralDnaCard 需要 { competitor: { nickname, follower_count, platform }, ... }
+    diagnosisTrack.value = result.track ?? "";
     viralDnaData.value = {
       competitor: {
         nickname: result.competitor_nickname ?? result.track + "头部账号",
