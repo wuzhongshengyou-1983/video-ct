@@ -29,7 +29,7 @@
     "eruda": "^3.4.3",
     "postcss-px-to-viewport-8-plugin": "^1.2.5",
     "sass-embedded": "^1.83.0",
-    "typescript": "^5.6.3",
+    "typescript": "^6.0.3",
     "unplugin-auto-import": "^0.19.0",
     "unplugin-vue-components": "^28.0.0",
     "vite": "^6.0.3",
