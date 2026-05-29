@@ -119,15 +119,17 @@ onMounted(async () => {
 
   // 自动填入测试手机号并发送 OTP
   phone.value = TEST_PHONE;
+  loading.value = true; // 锁住按钮，防止用户在自动登录期间重复点击
   try {
     const r = await authApi.sendOtp(TEST_PHONE);
     if (r.dev_code) {
       code.value = r.dev_code;
-      // 自动登录
-      await login();
+      await login(); // login() 内部会管理 loading 状态
+    } else {
+      loading.value = false;
     }
   } catch {
-    // 自动登录失败时保持手机号，用户手动操作
+    loading.value = false; // 失败时解锁，让用户手动操作
   }
 });
 
