@@ -1,13 +1,13 @@
-"""账号实体路由 — POST /accounts · GET /accounts/{id}/diagnoses."""
+"""账号实体路由 — POST /accounts · GET /accounts/{id}/diagnoses · GET /accounts/{id}/health."""
 from __future__ import annotations
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.exceptions import NotFoundError
 from app.deps import CurrentUser, DbSession
-from app.models.account import AccountEntity
+from app.models.account import AccountEntity, AccountHealthSnapshot
 from app.models.diagnosis import Diagnosis
 
 router = APIRouter()
@@ -91,3 +91,53 @@ async def list_account_diagnoses(account_id: int, db: DbSession, user: CurrentUs
         )
         for d in diagnoses
     ]
+
+
+@router.get("/{account_id}/health")
+async def get_account_health(account_id: int, db: DbSession, user: CurrentUser):
+    """账号健康分（Sprint3 数据飞轮）.
+
+    优先返回最新快照；无快照时基于诊断数量派生初始分。
+    """
+    result = await db.execute(
+        select(AccountEntity)
+        .where(AccountEntity.id == account_id, AccountEntity.user_id == user.id)
+    )
+    if not result.scalar_one_or_none():
+        raise NotFoundError("账号不存在或无权访问")
+
+    snap_result = await db.execute(
+        select(AccountHealthSnapshot)
+        .where(AccountHealthSnapshot.account_entity_id == account_id)
+        .order_by(AccountHealthSnapshot.snapshot_date.desc())
+        .limit(1)
+    )
+    snapshot = snap_result.scalar_one_or_none()
+
+    if snapshot:
+        return {
+            "account_id": account_id,
+            "snapshot_date": snapshot.snapshot_date.isoformat(),
+            "health_score": snapshot.health_score,
+            "dimension_scores": snapshot.dimension_scores,
+            "benchmark_percentile": snapshot.benchmark_percentile,
+            "trend": snapshot.trend,
+            "notes": snapshot.notes,
+            "source": "snapshot",
+        }
+
+    diag_count = await db.scalar(
+        select(func.count(Diagnosis.id)).where(Diagnosis.account_id == account_id)
+    ) or 0
+    stub_score = min(30.0 + diag_count * 5.0, 60.0)
+
+    return {
+        "account_id": account_id,
+        "snapshot_date": None,
+        "health_score": stub_score,
+        "dimension_scores": None,
+        "benchmark_percentile": None,
+        "trend": "stable",
+        "notes": f"基于 {diag_count} 次诊断估算，积累更多数据后自动更新",
+        "source": "derived",
+    }

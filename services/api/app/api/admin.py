@@ -1,6 +1,7 @@
 """管理后台路由."""
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
@@ -9,6 +10,7 @@ from sqlalchemy import func, select
 from app.core.exceptions import ForbiddenError
 from app.deps import CurrentUser, DbSession
 from app.models.diagnosis import Diagnosis, Report
+from app.models.event_log import EventLog
 from app.models.subscription import Order, Subscription
 from app.models.user import User
 
@@ -109,6 +111,48 @@ async def list_orders(
             } for o in res.scalars().all()
         ],
         "total": total, "page": page, "size": size,
+    }
+
+
+@router.get("/stats/events-trend")
+async def events_trend(
+    db: DbSession,
+    _: User = Depends(require_admin),
+    days: int = 7,
+):
+    """event_logs 按日聚合趋势（Sprint3 数据仪表盘）."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    result = await db.execute(
+        select(
+            func.date(EventLog.created_at).label("day"),
+            EventLog.event_type,
+            func.count(EventLog.id).label("cnt"),
+        )
+        .where(EventLog.created_at >= cutoff)
+        .group_by(func.date(EventLog.created_at), EventLog.event_type)
+        .order_by(func.date(EventLog.created_at))
+    )
+    rows = result.all()
+
+    day_map: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for row in rows:
+        day_str = str(row.day)[:10]
+        day_map[day_str][row.event_type] += row.cnt
+
+    trend = [
+        {"date": day, "total": sum(counts.values()), "by_type": dict(counts)}
+        for day, counts in sorted(day_map.items())
+    ]
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    total_24h = next((item["total"] for item in trend if item["date"] == today), 0)
+
+    return {
+        "days": days,
+        "trend": trend,
+        "phase1_threshold": 500,
+        "phase1_met": total_24h >= 500,
     }
 
 

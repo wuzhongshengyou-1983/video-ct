@@ -141,3 +141,157 @@ class TestErrorHandling:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code in {400, 422}
+
+
+# ── Sprint3 测试辅助 ────────────────────────────────────────────────────────
+
+_uid_counter = 0
+
+
+async def _create_user_token(db_session, role: str = "user") -> tuple[int, str]:
+    """在测试 DB 插入用户并返回 (user_id, bearer_token).
+
+    SQLite 的 BigInteger PK 不自动递增，须显式传 id。
+    """
+    global _uid_counter
+    from app.models.user import User
+    from app.core.security import create_access_token
+
+    _uid_counter += 1
+    uid = _uid_counter
+    user = User(id=uid, phone=f"+861390000{uid:04d}", role=role, is_active=True)
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    token = create_access_token(user.id)
+    return user.id, token
+
+
+class TestAdminEventsTrend:
+    """Sprint3 · GET /api/v1/admin/stats/events-trend."""
+
+    @pytest.mark.asyncio
+    async def test_requires_auth(self, client: AsyncClient):
+        resp = await client.get("/api/v1/admin/stats/events-trend")
+        assert resp.status_code in {401, 403, 422}
+
+    @pytest.mark.asyncio
+    async def test_requires_admin_role(self, client: AsyncClient, db_session):
+        _, token = await _create_user_token(db_session, role="user")
+        resp = await client.get(
+            "/api/v1/admin/stats/events-trend",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_admin_empty_trend(self, client: AsyncClient, db_session):
+        """无事件时返回空趋势、phase1_met=False."""
+        _, token = await _create_user_token(db_session, role="admin")
+        resp = await client.get(
+            "/api/v1/admin/stats/events-trend",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["trend"] == []
+        assert data["phase1_met"] is False
+        assert data["phase1_threshold"] == 500
+
+    @pytest.mark.asyncio
+    async def test_admin_trend_with_events(self, client: AsyncClient, db_session):
+        """插入事件后趋势正确聚合."""
+        from app.models.event_log import EventLog
+
+        user_id, token = await _create_user_token(db_session, role="admin")
+        for i, etype in enumerate(("page_view", "page_view", "diagnosis.submitted"), start=1):
+            db_session.add(EventLog(id=i, user_id=user_id, event_type=etype))
+        await db_session.commit()
+
+        resp = await client.get(
+            "/api/v1/admin/stats/events-trend",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["trend"]) == 1
+        day = data["trend"][0]
+        assert day["total"] == 3
+        assert day["by_type"]["page_view"] == 2
+        assert day["by_type"]["diagnosis.submitted"] == 1
+
+
+class TestAccountHealth:
+    """Sprint3 · GET /api/v1/accounts/{id}/health."""
+
+    @pytest.mark.asyncio
+    async def test_requires_auth(self, client: AsyncClient):
+        resp = await client.get("/api/v1/accounts/1/health")
+        assert resp.status_code in {401, 403, 422}
+
+    @pytest.mark.asyncio
+    async def test_not_found_or_forbidden(self, client: AsyncClient, db_session):
+        """不存在或他人账号返回 404."""
+        _, token = await _create_user_token(db_session, role="user")
+        resp = await client.get(
+            "/api/v1/accounts/9999/health",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_derived_score_no_snapshot(self, client: AsyncClient, db_session):
+        """无快照时返回 derived 分（30 分基础分）."""
+        from app.models.account import AccountEntity
+
+        user_id, token = await _create_user_token(db_session, role="user")
+        account = AccountEntity(id=1, user_id=user_id, platform="douyin", follower_count=1000)
+        db_session.add(account)
+        await db_session.commit()
+        await db_session.refresh(account)
+
+        resp = await client.get(
+            f"/api/v1/accounts/{account.id}/health",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["source"] == "derived"
+        assert data["health_score"] == 30.0
+        assert data["snapshot_date"] is None
+
+    @pytest.mark.asyncio
+    async def test_snapshot_returned_when_exists(self, client: AsyncClient, db_session):
+        """有快照时优先返回快照数据."""
+        from datetime import date
+        from app.models.account import AccountEntity, AccountHealthSnapshot
+
+        user_id, token = await _create_user_token(db_session, role="user")
+        account = AccountEntity(id=1, user_id=user_id, platform="douyin", follower_count=5000)
+        db_session.add(account)
+        await db_session.commit()
+        await db_session.refresh(account)
+
+        snap = AccountHealthSnapshot(
+            id=1,
+            account_entity_id=account.id,
+            snapshot_date=date(2026, 5, 29),
+            health_score=72.5,
+            dimension_scores={"hook": 80, "cta": 65},
+            benchmark_percentile=68.0,
+            trend="up",
+            notes="诊断改善显著",
+        )
+        db_session.add(snap)
+        await db_session.commit()
+
+        resp = await client.get(
+            f"/api/v1/accounts/{account.id}/health",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["source"] == "snapshot"
+        assert data["health_score"] == 72.5
+        assert data["trend"] == "up"
+        assert data["benchmark_percentile"] == 68.0
