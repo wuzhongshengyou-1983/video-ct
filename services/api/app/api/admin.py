@@ -151,8 +151,8 @@ async def events_trend(
     return {
         "days": days,
         "trend": trend,
-        "phase1_threshold": 500,
-        "phase1_met": total_24h >= 500,
+        "phase1_threshold": 1,  # TODO: 内测阶段临时降至 1，正式上线改回 500
+        "phase1_met": total_24h >= 1,
     }
 
 

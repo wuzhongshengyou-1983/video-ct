@@ -99,6 +99,14 @@
         >
           <template #icon><span class="menu-icon">⭐</span></template>
         </van-cell>
+        <van-cell
+          v-if="isAdmin"
+          title="数据仪表盘"
+          is-link
+          @click="router.push('/admin')"
+        >
+          <template #icon><span class="menu-icon">📊</span></template>
+        </van-cell>
       </van-cell-group>
     </section>
 
@@ -124,6 +132,10 @@ const userStore = useUserStore();
 const avatarText = computed(() => {
   return (userStore.me?.nickname || "创").charAt(0).toUpperCase();
 });
+
+const isAdmin = computed(() =>
+  ["admin", "consultant"].includes(userStore.me?.role ?? ""),
+);
 
 const quotaPercent = computed(() => {
   const used = userStore.me?.monthly_free_scans_used || 0;

@@ -164,6 +164,13 @@ export const analyticsApi = {
     ),
 };
 
+// 管理后台
+export const adminApi = {
+  eventsTrend: (days = 7) =>
+    http.get<unknown, any>(`/api/v1/admin/stats/events-trend?days=${days}`),
+  dashboard: () => http.get<unknown, any>("/api/v1/admin/dashboard"),
+};
+
 // 账号实体
 export const accountsApi = {
   mine: () => http.get<unknown, any[]>("/api/v1/accounts/mine"),
