@@ -75,7 +75,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { referrerApi } from '@/api'
 import { REFERRER_LEVEL_LABELS } from '@video-ct/shared'
-import { trackPageView } from '@/utils/tracker'
 import SkeletonList from '@/components/SkeletonList.vue'
 
 const router = useRouter()
@@ -150,7 +149,6 @@ async function onRefresh() {
 }
 
 onMounted(async () => {
-  trackPageView('leaderboard')
   await fetchAllItems()
   firstLoad.value = false
   onLoad()

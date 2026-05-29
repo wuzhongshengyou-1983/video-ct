@@ -96,7 +96,7 @@ import { subscriptionApi } from '@/api'
 import { isWechat, wechatPay } from '@/utils/pay'
 import type { WxPayParams } from '@/utils/pay'
 import { formatTime, getTierLabel } from '@video-ct/shared'
-import { trackPageView, trackConversion } from '@/utils/tracker'
+import { trackConversion } from '@/utils/tracker'
 import SkeletonList from '@/components/SkeletonList.vue'
 
 const router = useRouter()
@@ -272,7 +272,6 @@ async function renewSub() {
 }
 
 onMounted(() => {
-  trackPageView('subscribe')
   fetchData()
 })
 </script>

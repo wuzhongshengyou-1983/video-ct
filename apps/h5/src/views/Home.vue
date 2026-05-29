@@ -98,7 +98,7 @@ import { useUserStore } from '@/stores/user'
 import { benchmarkApi } from '@/api'
 import { formatFollowerCount, getTierLabel, REFERRER_REWARD_CNY, REFERRER_DEDUCT_COUNT } from '@video-ct/shared'
 import SkeletonCard from '@/components/SkeletonCard.vue'
-import { trackPageView, trackClick } from '@/utils/tracker'
+import { trackClick } from '@/utils/tracker'
 import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
 const router = useRouter()
@@ -138,7 +138,6 @@ function goReferrer() {
 const { updateShare } = useWechatShare()
 
 onMounted(async () => {
-  trackPageView('home')
   updateShare(SHARE_TEXT.home.title, SHARE_TEXT.home.desc)
   try {
     benchmarkTop.value = await benchmarkApi.top10('职场干货')

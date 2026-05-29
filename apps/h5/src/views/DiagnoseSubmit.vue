@@ -83,7 +83,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Toast, Dialog } from 'vant'
 import { diagnosisApi, benchmarkApi, eventsApi } from '@/api'
-import { trackPageView, trackConversion } from '@/utils/tracker'
+import { trackConversion } from '@/utils/tracker'
 import { useUserStore } from '@/stores/user'
 import { DIAGNOSIS_TYPES } from '@video-ct/shared'
 import { subscribeDiagnosisComplete } from '@/utils/subscribe-message'
@@ -120,7 +120,6 @@ const used = computed(() => userStore.me?.monthly_free_scans_used ?? 0)
 const quota = computed(() => userStore.me?.monthly_free_scans_quota ?? 3)
 
 onMounted(async () => {
-  trackPageView('diagnose_submit')
   try {
     const ts = await benchmarkApi.tracks()
     tracks.value = [

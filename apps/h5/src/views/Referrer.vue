@@ -125,7 +125,7 @@ import {
   REFERRER_REWARD_CNY,
   MIN_WITHDRAW_CNY,
 } from '@video-ct/shared'
-import { trackPageView, trackClick } from '@/utils/tracker'
+import { trackClick } from '@/utils/tracker'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
@@ -286,7 +286,6 @@ async function doWithdraw() {
 }
 
 onMounted(() => {
-  trackPageView('referrer')
   updateShare(SHARE_TEXT.referrer.title, SHARE_TEXT.referrer.desc)
   fetchData()
 })

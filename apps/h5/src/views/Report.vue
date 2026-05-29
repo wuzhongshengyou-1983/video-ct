@@ -124,7 +124,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { Toast } from 'vant'
 import { diagnosisApi, eventsApi } from '@/api'
 import { getGradeLabel } from '@video-ct/shared'
-import { trackPageView, trackClick } from '@/utils/tracker'
+import { trackClick } from '@/utils/tracker'
 import RadarChart from '@/components/RadarChart.vue'
 import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
 
@@ -249,7 +249,6 @@ function share() {
 }
 
 onMounted(async () => {
-  trackPageView('report')
 
   // 1. 先展示缓存版本（如有）
   const cached = loadCachedReport()

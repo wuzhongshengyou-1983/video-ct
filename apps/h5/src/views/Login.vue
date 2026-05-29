@@ -76,7 +76,7 @@ import { Toast } from 'vant'
 import { authApi, wechatApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { DEV_OTP_CODE } from '@video-ct/shared'
-import { trackPageView, trackConversion } from '@/utils/tracker'
+import { trackConversion } from '@/utils/tracker'
 import { isWechat } from '@/utils/wechat'
 
 const isDev = import.meta.env.DEV
@@ -96,7 +96,6 @@ const isWechatEnv = ref(false)
 const referrer = ref<string | null>(null)
 
 onMounted(() => {
-  trackPageView('login')
   isWechatEnv.value = isWechat()
   referrer.value = localStorage.getItem('vct_ref') || (route.query.ref as string) || null
   if (referrer.value && !localStorage.getItem('vct_ref')) {
