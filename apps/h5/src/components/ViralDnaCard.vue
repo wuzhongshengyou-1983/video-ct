@@ -320,14 +320,14 @@ function scoreCls(score: number): string {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--vct-surface, #2a2a3c);
-  border: 2px solid var(--vct-border, #3a3a4c);
+  background: var(--mfc-bg-soft);
+  border: 2px solid var(--mfc-hairline);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
   font-weight: 700;
-  color: var(--vct-primary, #f59e0b);
+  color: var(--mfc-blue);
   flex-shrink: 0;
 }
 
@@ -345,15 +345,15 @@ function scoreCls(score: number): string {
 
 .hero-fans {
   font-size: 12px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
 }
 
 .platform-tag {
   font-size: 11px;
   padding: 1px 8px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.15);
-  color: var(--vct-primary, #f59e0b);
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--mfc-blue);
   font-weight: 600;
 }
 
@@ -365,21 +365,21 @@ function scoreCls(score: number): string {
   font-size: 48px;
   font-weight: 800;
   line-height: 1;
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  background: linear-gradient(135deg, #007aff, #0070f3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .viral-score-label {
   font-size: 11px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   margin-top: 4px;
 }
 
 /* ---- 7 维评分条 ---- */
 .dim-bar-row {
   padding: 8px 0;
-  border-bottom: 1px dashed var(--vct-border, #3a3a4c);
+  border-bottom: 1px dashed var(--mfc-hairline);
 
   &:last-child {
     border-bottom: none;
@@ -403,22 +403,22 @@ function scoreCls(score: number): string {
   font-weight: 800;
 
   &.excellent {
-    color: #10b981;
+    color: var(--mfc-green);
   }
   &.good {
-    color: #38bdf8;
+    color: var(--mfc-teal);
   }
   &.fair {
-    color: #f59e0b;
+    color: #007aff;
   }
   &.poor {
-    color: #ef4444;
+    color: var(--mfc-red);
   }
 }
 
 .dim-bar-track {
   height: 6px;
-  background: var(--vct-surface, #2a2a3c);
+  background: var(--mfc-bg-soft);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -429,29 +429,29 @@ function scoreCls(score: number): string {
   transition: width 0.6s ease;
 
   &.excellent {
-    background: #10b981;
+    background: var(--mfc-green);
   }
   &.good {
-    background: #38bdf8;
+    background: var(--mfc-teal);
   }
   &.fair {
-    background: #f59e0b;
+    background: #007aff;
   }
   &.poor {
-    background: #ef4444;
+    background: var(--mfc-red);
   }
 }
 
 .dim-bar-evidence {
   font-size: 11px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   margin-top: 5px;
   line-height: 1.5;
 }
 
 /* ---- Top 3 贡献因子 ---- */
 .factor-item {
-  border-bottom: 1px dashed var(--vct-border, #3a3a4c);
+  border-bottom: 1px dashed var(--mfc-hairline);
 
   &:last-child {
     border-bottom: none;
@@ -477,7 +477,7 @@ function scoreCls(score: number): string {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--vct-primary, #f59e0b);
+  background: var(--mfc-blue);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -500,13 +500,13 @@ function scoreCls(score: number): string {
 
 .factor-pct {
   font-size: 13px;
-  color: var(--vct-primary, #f59e0b);
+  color: var(--mfc-blue);
   font-weight: 700;
 }
 
 .factor-evidence {
   font-size: 12px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   line-height: 1.6;
   padding-bottom: 12px;
 }
@@ -529,8 +529,8 @@ function scoreCls(score: number): string {
 .fframe-seg {
   flex: 0 0 auto;
   min-width: 72px;
-  background: var(--vct-surface, #2a2a3c);
-  border: 1px solid var(--vct-border, #3a3a4c);
+  background: var(--mfc-bg-soft);
+  border: 1px solid var(--mfc-hairline);
   border-radius: 10px;
   padding: 10px 8px;
   text-align: center;
@@ -542,7 +542,7 @@ function scoreCls(score: number): string {
 
 .fframe-range {
   font-size: 10px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   white-space: nowrap;
 }
 
@@ -558,16 +558,16 @@ function scoreCls(score: number): string {
   color: #fff;
 
   &.excellent {
-    background: #10b981;
+    background: var(--mfc-green);
   }
   &.good {
-    background: #38bdf8;
+    background: var(--mfc-teal);
   }
   &.fair {
-    background: #f59e0b;
+    background: #007aff;
   }
   &.poor {
-    background: #ef4444;
+    background: var(--mfc-red);
   }
 }
 
@@ -578,7 +578,7 @@ function scoreCls(score: number): string {
 
 .fframe-tactic {
   font-size: 10px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   line-height: 1.4;
   text-align: center;
   word-break: break-all;
@@ -592,7 +592,7 @@ function scoreCls(score: number): string {
 }
 
 .strategy-col {
-  background: var(--vct-surface, #2a2a3c);
+  background: var(--mfc-bg-soft);
   border-radius: 8px;
   padding: 10px 8px;
 
@@ -610,10 +610,10 @@ function scoreCls(score: number): string {
 
     li {
       font-size: 11px;
-      color: var(--vct-text-2, #9ca3af);
+      color: var(--mfc-fg-2);
       line-height: 1.5;
       padding: 3px 0;
-      border-bottom: 1px dashed var(--vct-border, #3a3a4c);
+      border-bottom: 1px dashed var(--mfc-hairline);
 
       &:last-child {
         border-bottom: none;
@@ -638,7 +638,7 @@ function scoreCls(score: number): string {
 }
 
 .remix-btn {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  background: linear-gradient(135deg, #007aff, #0070f3);
   border: none;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -652,11 +652,11 @@ function scoreCls(score: number): string {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 10px;
-  color: var(--vct-primary, #f59e0b);
+  color: var(--mfc-blue);
 }
 
 .remix-seg-item {
-  border: 1px solid var(--vct-border, #3a3a4c);
+  border: 1px solid var(--mfc-hairline);
   border-radius: 8px;
   margin-bottom: 8px;
   overflow: hidden;
@@ -667,7 +667,7 @@ function scoreCls(score: number): string {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: var(--vct-surface, #2a2a3c);
+  background: var(--mfc-bg-soft);
   cursor: pointer;
   user-select: none;
 }
@@ -685,14 +685,14 @@ function scoreCls(score: number): string {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.2);
-  color: var(--vct-primary, #f59e0b);
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--mfc-blue);
   flex-shrink: 0;
 }
 
 .remix-duration {
   font-size: 11px;
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   font-family: monospace;
   flex-shrink: 0;
 }
@@ -720,17 +720,17 @@ function scoreCls(score: number): string {
 
   &.why {
     padding-top: 6px;
-    border-top: 1px dashed var(--vct-border, #3a3a4c);
+    border-top: 1px dashed var(--mfc-hairline);
   }
 }
 
 .remix-field-label {
-  color: var(--vct-text-2, #9ca3af);
+  color: var(--mfc-fg-2);
   flex-shrink: 0;
   min-width: 28px;
 }
 
 .remix-field-val {
-  color: var(--vct-text, #e5e7eb);
+  color: var(--mfc-fg);
 }
 </style>

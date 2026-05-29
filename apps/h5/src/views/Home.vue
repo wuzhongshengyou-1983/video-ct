@@ -51,16 +51,27 @@
     <section>
       <div class="vct-section-title">
         🔥 赛道头部对标
-        <van-button size="mini" plain @click="router.push('/diagnose')">查看全部</van-button>
+        <van-button size="mini" plain @click="router.push('/diagnose')"
+          >查看全部</van-button
+        >
       </div>
       <!-- 骨架屏加载态 -->
-      <SkeletonCard v-if="benchmarkLoading && benchmarkTop.length === 0" :lines="2" />
+      <SkeletonCard
+        v-if="benchmarkLoading && benchmarkTop.length === 0"
+        :lines="2"
+      />
       <div v-else class="benchmark-list">
-        <div v-for="b in benchmarkTop" :key="b.account_id" class="benchmark-item vct-card">
+        <div
+          v-for="b in benchmarkTop"
+          :key="b.account_id"
+          class="benchmark-item vct-card"
+        >
           <div class="rank">#{{ b.rank }}</div>
           <div class="info">
             <div class="name">{{ b.nickname }}</div>
-            <div class="meta">{{ b.platform }} · {{ formatFollowerCount(b.follower_count) }} 粉</div>
+            <div class="meta">
+              {{ b.platform }} · {{ formatFollowerCount(b.follower_count) }} 粉
+            </div>
             <div class="archetype">{{ b.style_archetype }}</div>
           </div>
         </div>
@@ -72,7 +83,10 @@
       <div class="vct-card referrer-banner" @click="goReferrer">
         <div class="banner-left">
           <div class="banner-title">成为品牌分享官</div>
-          <div class="banner-sub">拉 1 个朋友付费 = {{ REFERRER_REWARD_CNY }} 元 · 拉 {{ REFERRER_DEDUCT_COUNT }} 个抵 PRO 月卡</div>
+          <div class="banner-sub">
+            拉 1 个朋友付费 = {{ REFERRER_REWARD_CNY }} 元 · 拉
+            {{ REFERRER_DEDUCT_COUNT }} 个抵 PRO 月卡
+          </div>
         </div>
         <div class="banner-right">💎</div>
       </div>
@@ -92,129 +106,250 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { benchmarkApi } from '@/api'
-import { formatFollowerCount, getTierLabel, REFERRER_REWARD_CNY, REFERRER_DEDUCT_COUNT } from '@video-ct/shared'
-import SkeletonCard from '@/components/SkeletonCard.vue'
-import { trackClick } from '@/utils/tracker'
-import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user";
+import { benchmarkApi } from "@/api";
+import {
+  formatFollowerCount,
+  getTierLabel,
+  REFERRER_REWARD_CNY,
+  REFERRER_DEDUCT_COUNT,
+} from "@video-ct/shared";
+import SkeletonCard from "@/components/SkeletonCard.vue";
+import { trackClick } from "@/utils/tracker";
+import { useWechatShare, SHARE_TEXT } from "@/composables/useWechatShare";
 
-const router = useRouter()
-const userStore = useUserStore()
+const router = useRouter();
+const userStore = useUserStore();
 
-const benchmarkTop = ref<any[]>([])
-const benchmarkLoading = ref(true)
+const benchmarkTop = ref<any[]>([]);
+const benchmarkLoading = ref(true);
 const agents = ref([
-  { name: 'CTRadiologist', role: 'CT 诊断官', emoji: '🩺' },
-  { name: 'BenchmarkAnalyst', role: '对标分析师', emoji: '📊' },
-  { name: 'PersonaScout', role: '人设观察员', emoji: '🎭' },
-  { name: 'BizStrategist', role: '商业策略师', emoji: '💎' },
-  { name: 'ContentMaker', role: '内容生成手', emoji: '✍️' },
-  { name: 'DataSentinel', role: '数据预警员', emoji: '🚨' },
-  { name: 'ConsultantCopilot', role: '顾问助理', emoji: '🤝' },
-  { name: 'CSButler', role: '客户成功管家', emoji: '⭐' },
-])
+  { name: "CTRadiologist", role: "CT 诊断官", emoji: "🩺" },
+  { name: "BenchmarkAnalyst", role: "对标分析师", emoji: "📊" },
+  { name: "PersonaScout", role: "人设观察员", emoji: "🎭" },
+  { name: "BizStrategist", role: "商业策略师", emoji: "💎" },
+  { name: "ContentMaker", role: "内容生成手", emoji: "✍️" },
+  { name: "DataSentinel", role: "数据预警员", emoji: "🚨" },
+  { name: "ConsultantCopilot", role: "顾问助理", emoji: "🤝" },
+  { name: "CSButler", role: "客户成功管家", emoji: "⭐" },
+]);
 
-const usedCount = computed(() => userStore.me?.monthly_free_scans_used ?? 0)
-const quota = computed(() => userStore.me?.monthly_free_scans_quota ?? 3)
+const usedCount = computed(() => userStore.me?.monthly_free_scans_used ?? 0);
+const quota = computed(() => userStore.me?.monthly_free_scans_quota ?? 3);
 
 function goDiagnoseSubmit() {
-  trackClick('submit_diagnosis')
-  router.push('/diagnose/submit')
+  trackClick("submit_diagnosis");
+  router.push("/diagnose/submit");
 }
 
 function goPersona() {
-  trackClick('persona')
-  router.push('/persona')
+  trackClick("persona");
+  router.push("/persona");
 }
 
 function goReferrer() {
-  trackClick('referrer')
-  router.push('/referrer')
+  trackClick("referrer");
+  router.push("/referrer");
 }
 
-const { updateShare } = useWechatShare()
+const { updateShare } = useWechatShare();
 
 onMounted(async () => {
-  updateShare(SHARE_TEXT.home.title, SHARE_TEXT.home.desc)
+  updateShare(SHARE_TEXT.home.title, SHARE_TEXT.home.desc);
   try {
-    benchmarkTop.value = await benchmarkApi.top10('职场干货')
-  } catch { /* ignore */ } finally {
-    benchmarkLoading.value = false
+    benchmarkTop.value = await benchmarkApi.top10("职场干货");
+  } catch {
+    /* ignore */
+  } finally {
+    benchmarkLoading.value = false;
   }
-})
+});
 </script>
 
 <style lang="scss" scoped>
-.home { padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.home {
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
 .hero {
   text-align: center;
   padding: 24px 0 16px;
   .logo {
-    font-size: 32px; font-weight: 800; letter-spacing: 2px;
-    span { color: var(--vct-primary); text-shadow: 0 0 20px rgba(245,158,11,0.5); }
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    span {
+      color: var(--mfc-blue);
+      text-shadow: 0 0 20px rgba(0, 122, 255, 0.12);
+    }
   }
-  .tagline { color: var(--vct-text-2); margin-top: 4px; font-size: 13px; }
-  .hero-stats { display: flex; gap: 12px; margin-top: 20px; justify-content: center; }
+  .tagline {
+    color: var(--mfc-fg-2);
+    margin-top: 4px;
+    font-size: 13px;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: center;
+  }
   .stat-pill {
-    padding: 8px 16px; border-radius: 999px; background: var(--vct-surface);
-    border: 1px solid var(--vct-border); min-width: 100px;
-    .num { font-size: 18px; font-weight: 700; color: var(--vct-text); }
-    .label { font-size: 11px; color: var(--vct-text-3); margin-top: 2px; }
-    &.primary { border-color: var(--vct-primary); }
-    &.primary .num { color: var(--vct-primary); }
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--mfc-bg-soft);
+    border: 1px solid var(--mfc-hairline);
+    min-width: 100px;
+    .num {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--mfc-fg);
+    }
+    .label {
+      font-size: 11px;
+      color: var(--mfc-fg-3);
+      margin-top: 2px;
+    }
+    &.primary {
+      border-color: var(--mfc-blue);
+    }
+    &.primary .num {
+      color: var(--mfc-blue);
+    }
   }
 }
 .main-cta {
-  display: flex; align-items: center; gap: 16px;
-  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(56,189,248,0.08));
-  border-color: rgba(245,158,11,0.3);
-  .cta-icon { font-size: 36px; }
-  .cta-text { flex: 1; }
-  .cta-title { font-size: 17px; font-weight: 600; }
-  .cta-sub { font-size: 12px; color: var(--vct-text-2); margin-top: 4px; }
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.12),
+    rgba(88, 86, 214, 0.12)
+  );
+  border-color: rgba(0, 122, 255, 0.12);
+  .cta-icon {
+    font-size: 36px;
+  }
+  .cta-text {
+    flex: 1;
+  }
+  .cta-title {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .cta-sub {
+    font-size: 12px;
+    color: var(--mfc-fg-2);
+    margin-top: 4px;
+  }
 }
 .grid-3 {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
   .grid-item {
-    background: var(--vct-surface); border-radius: var(--vct-radius);
-    padding: 16px 8px; text-align: center; border: 1px solid var(--vct-border);
-    .icon { font-size: 28px; }
-    .title { font-size: 13px; font-weight: 600; margin-top: 6px; }
-    .sub { font-size: 10px; color: var(--vct-text-3); }
+    background: var(--mfc-bg-soft);
+    border-radius: var(--mfc-r-2xl);
+    padding: 16px 8px;
+    text-align: center;
+    border: 1px solid var(--mfc-hairline);
+    .icon {
+      font-size: 28px;
+    }
+    .title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .sub {
+      font-size: 10px;
+      color: var(--mfc-fg-3);
+    }
   }
 }
 .benchmark-list {
-  display: flex; gap: 12px; overflow-x: auto;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 .benchmark-item {
-  min-width: 200px; display: flex; gap: 10px; align-items: center;
+  min-width: 200px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
   .rank {
-    font-size: 24px; font-weight: 800; color: var(--vct-primary);
-    background: linear-gradient(135deg, #f59e0b, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--mfc-blue);
+    background: linear-gradient(135deg, #007aff, #fb923c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
-  .info { flex: 1; }
-  .name { font-size: 14px; font-weight: 600; }
-  .meta { font-size: 11px; color: var(--vct-text-3); }
-  .archetype { font-size: 11px; color: var(--vct-accent); margin-top: 2px; }
+  .info {
+    flex: 1;
+  }
+  .name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .meta {
+    font-size: 11px;
+    color: var(--mfc-fg-3);
+  }
+  .archetype {
+    font-size: 11px;
+    color: var(--mfc-indigo);
+    margin-top: 2px;
+  }
 }
 .referrer-banner {
-  display: flex; align-items: center; gap: 12px; cursor: pointer;
-  background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(245,158,11,0.08));
-  border-color: rgba(56,189,248,0.25);
-  .banner-left { flex: 1; }
-  .banner-title { font-weight: 600; }
-  .banner-sub { font-size: 11px; color: var(--vct-text-2); margin-top: 4px; }
-  .banner-right { font-size: 36px; }
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  background: linear-gradient(
+    135deg,
+    rgba(88, 86, 214, 0.12),
+    rgba(0, 122, 255, 0.12)
+  );
+  border-color: rgba(88, 86, 214, 0.12);
+  .banner-left {
+    flex: 1;
+  }
+  .banner-title {
+    font-weight: 600;
+  }
+  .banner-sub {
+    font-size: 11px;
+    color: var(--mfc-fg-2);
+    margin-top: 4px;
+  }
+  .banner-right {
+    font-size: 36px;
+  }
 }
 .agents {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  .agent-card { text-align: center; padding: 12px 4px; }
-  .agent-emoji { font-size: 24px; }
-  .agent-name { font-size: 11px; color: var(--vct-text-2); margin-top: 4px; }
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  .agent-card {
+    text-align: center;
+    padding: 12px 4px;
+  }
+  .agent-emoji {
+    font-size: 24px;
+  }
+  .agent-name {
+    font-size: 11px;
+    color: var(--mfc-fg-2);
+    margin-top: 4px;
+  }
 }
 </style>

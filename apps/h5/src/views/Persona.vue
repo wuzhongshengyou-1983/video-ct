@@ -204,10 +204,10 @@ const dimensionScores = computed(() => {
 });
 
 function scoreColor(v: number) {
-  if (v >= 80) return "linear-gradient(90deg, #10b981, #34d399)";
-  if (v >= 60) return "linear-gradient(90deg, #38bdf8, #60a5fa)";
-  if (v >= 40) return "linear-gradient(90deg, #f59e0b, #fbbf24)";
-  return "linear-gradient(90deg, #ef4444, #f87171)";
+  if (v >= 80) return "linear-gradient(90deg, var(--mfc-green), #34d399)";
+  if (v >= 60) return "linear-gradient(90deg, var(--mfc-teal), #60a5fa)";
+  if (v >= 40) return "linear-gradient(90deg, #007aff, #0070f3)";
+  return "linear-gradient(90deg, var(--mfc-red), #f87171)";
 }
 
 function prioCls(p: string) {
@@ -327,8 +327,8 @@ onMounted(fetchData);
   padding: 24px 16px;
   background: linear-gradient(
     135deg,
-    rgba(56, 189, 248, 0.08),
-    rgba(245, 158, 11, 0.06)
+    rgba(88, 86, 214, 0.12),
+    rgba(0, 122, 255, 0.12)
   );
   .intro-icon {
     font-size: 48px;
@@ -340,7 +340,7 @@ onMounted(fetchData);
   }
   .intro-desc {
     font-size: 13px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     line-height: 1.6;
   }
 }
@@ -362,11 +362,11 @@ onMounted(fetchData);
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   .archetype-item {
-    background: var(--vct-surface);
-    border-radius: var(--vct-radius);
+    background: var(--mfc-bg-soft);
+    border-radius: var(--mfc-r-2xl);
     padding: 12px 6px;
     text-align: center;
-    border: 1px solid var(--vct-border);
+    border: 1px solid var(--mfc-hairline);
     .arch-emoji {
       font-size: 24px;
     }
@@ -377,7 +377,7 @@ onMounted(fetchData);
     }
     .arch-desc {
       font-size: 10px;
-      color: var(--vct-text-3);
+      color: var(--mfc-fg-3);
     }
   }
 }
@@ -388,22 +388,22 @@ onMounted(fetchData);
   text-align: center;
   background: linear-gradient(
     135deg,
-    rgba(245, 158, 11, 0.1),
-    rgba(56, 189, 248, 0.05)
+    rgba(0, 122, 255, 0.12),
+    rgba(88, 86, 214, 0.12)
   );
   .match-title {
     font-size: 14px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
   }
   .primary-archetype {
     font-size: 24px;
     font-weight: 700;
-    color: var(--vct-primary);
+    color: var(--mfc-blue);
     margin: 8px 0;
   }
   .match-pct {
     font-size: 13px;
-    color: var(--vct-accent);
+    color: var(--mfc-indigo);
     margin-bottom: 16px;
   }
   .dim-scores {
@@ -417,7 +417,7 @@ onMounted(fetchData);
     padding: 4px 0;
     .dim-label {
       font-size: 12px;
-      color: var(--vct-text-2);
+      color: var(--mfc-fg-2);
     }
     .dim-val {
       font-size: 12px;
@@ -432,18 +432,18 @@ onMounted(fetchData);
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   .canvas-cell {
-    background: var(--vct-surface);
+    background: var(--mfc-bg-soft);
     border-radius: 8px;
     padding: 10px 8px;
-    border: 1px solid var(--vct-border);
+    border: 1px solid var(--mfc-hairline);
     .canvas-key {
       font-size: 10px;
-      color: var(--vct-text-3);
+      color: var(--mfc-fg-3);
       margin-bottom: 4px;
     }
     .canvas-val {
       font-size: 12px;
-      color: var(--vct-text);
+      color: var(--mfc-fg);
       word-break: break-all;
     }
   }
@@ -451,7 +451,7 @@ onMounted(fetchData);
 
 .finding-item {
   padding: 12px 0;
-  border-bottom: 1px dashed var(--vct-border);
+  border-bottom: 1px dashed var(--mfc-hairline);
   &:last-child {
     border-bottom: none;
   }
@@ -461,7 +461,7 @@ onMounted(fetchData);
   }
   .finding-suggest {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     margin-top: 4px;
   }
 }
@@ -470,7 +470,7 @@ onMounted(fetchData);
   display: flex;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px dashed var(--vct-border);
+  border-bottom: 1px dashed var(--mfc-hairline);
   &:last-child {
     border-bottom: none;
   }
@@ -482,15 +482,15 @@ onMounted(fetchData);
     font-size: 11px;
     font-weight: 600;
     line-height: 24px;
-    background: var(--vct-surface);
-    color: var(--vct-text-3);
+    background: var(--mfc-bg-soft);
+    color: var(--mfc-fg-3);
     &.p0 {
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
+      background: rgba(255, 59, 48, 0.12);
+      color: var(--mfc-red);
     }
     &.p1 {
-      background: rgba(245, 158, 11, 0.15);
-      color: #f59e0b;
+      background: rgba(0, 122, 255, 0.12);
+      color: #007aff;
     }
     &.p2 {
       background: rgba(107, 114, 128, 0.15);
@@ -506,7 +506,7 @@ onMounted(fetchData);
   }
   .suggest-detail {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     margin-top: 4px;
   }
 }
@@ -521,7 +521,7 @@ onMounted(fetchData);
   text-align: center;
   padding: 24px;
   p {
-    color: var(--vct-danger);
+    color: var(--mfc-color-danger);
     font-size: 13px;
     margin-bottom: 12px;
   }

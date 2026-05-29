@@ -138,7 +138,7 @@
           <!-- 反馈 -->
           <section class="vct-card">
             <div class="vct-section-title">📝 报告好不好用？</div>
-            <van-rate v-model="rating" size="28" color="#f59e0b" gutter="8" />
+            <van-rate v-model="rating" size="28" color="#007aff" gutter="8" />
             <van-field
               v-model="feedback"
               placeholder="（可选）告诉我们哪里不准 / 哪里有用，AI 会变得更聪明"
@@ -432,14 +432,14 @@ onMounted(async () => {
   padding: 32px 16px;
   background: linear-gradient(
     135deg,
-    rgba(245, 158, 11, 0.12),
-    rgba(56, 189, 248, 0.08)
+    rgba(0, 122, 255, 0.12),
+    rgba(88, 86, 214, 0.12)
   );
 }
 .grade-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: var(--vct-primary);
+  background: var(--mfc-blue);
   color: #fff;
   border-radius: 999px;
   font-size: 12px;
@@ -450,18 +450,18 @@ onMounted(async () => {
   font-weight: 800;
   line-height: 1;
   margin: 12px 0 4px;
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  background: var(--mfc-gradient-brand);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .overall-label {
-  color: var(--vct-text-2);
+  color: var(--mfc-fg-2);
   font-size: 13px;
 }
 .summary {
   margin-top: 16px;
   font-size: 13px;
-  color: var(--vct-text);
+  color: var(--mfc-fg);
   line-height: 1.6;
 }
 
@@ -482,37 +482,37 @@ onMounted(async () => {
   font-size: 28px;
   font-weight: 800;
   &.excellent {
-    color: #10b981;
+    color: var(--mfc-green);
   }
   &.good {
-    color: #38bdf8;
+    color: var(--mfc-teal);
   }
   &.fair {
-    color: #f59e0b;
+    color: #007aff;
   }
   &.poor {
-    color: #ef4444;
+    color: var(--mfc-red);
   }
 }
 .dim-block {
   margin-top: 12px;
   .block-title {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     margin-bottom: 6px;
   }
   ul {
     margin: 0;
     padding-left: 18px;
     font-size: 13px;
-    color: var(--vct-text);
+    color: var(--mfc-fg);
     line-height: 1.7;
   }
   &.warning .block-title {
-    color: var(--vct-warning);
+    color: var(--mfc-color-warning);
   }
   &.primary .block-title {
-    color: var(--vct-primary);
+    color: var(--mfc-blue);
   }
 }
 
@@ -520,14 +520,14 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px dashed var(--vct-border);
+  border-bottom: 1px dashed var(--mfc-hairline);
   &:last-child {
     border-bottom: none;
   }
   .ts {
     font-family: monospace;
     font-weight: 600;
-    color: var(--vct-accent);
+    color: var(--mfc-indigo);
     min-width: 50px;
   }
   .finding-problem {
@@ -536,14 +536,14 @@ onMounted(async () => {
   }
   .finding-suggest {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     margin-top: 4px;
   }
 }
 
 .suggest-item {
   padding: 14px 0;
-  border-bottom: 1px dashed var(--vct-border);
+  border-bottom: 1px dashed var(--mfc-hairline);
   &:last-child {
     border-bottom: none;
   }
@@ -554,12 +554,12 @@ onMounted(async () => {
     margin-bottom: 8px;
   }
   .vct-tag.p0 {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    background: rgba(255, 59, 48, 0.12);
+    color: var(--mfc-red);
   }
   .vct-tag.p1 {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
+    background: rgba(0, 122, 255, 0.12);
+    color: #007aff;
   }
   .vct-tag.p2 {
     background: rgba(107, 114, 128, 0.15);
@@ -570,10 +570,10 @@ onMounted(async () => {
   }
   .suggest-block {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     margin: 4px 0;
     b {
-      color: var(--vct-text);
+      color: var(--mfc-fg);
     }
   }
 }
@@ -586,20 +586,20 @@ onMounted(async () => {
   padding: 6px 0;
   .gap-label {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
   }
   .gap-bar {
     height: 8px;
-    background: var(--vct-surface);
+    background: var(--mfc-bg-soft);
     border-radius: 4px;
     overflow: hidden;
   }
   .gap-fill.neg {
-    background: var(--vct-danger);
+    background: var(--mfc-color-danger);
     margin-left: auto;
   }
   .gap-fill.pos {
-    background: var(--vct-success);
+    background: var(--mfc-color-success);
   }
   .gap-val {
     font-size: 12px;
@@ -616,7 +616,7 @@ onMounted(async () => {
   margin-top: 8px;
   .resubmit-hint {
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     margin-bottom: 10px;
   }
 }
@@ -624,11 +624,11 @@ onMounted(async () => {
 .offline-bar {
   margin: 8px 16px;
   padding: 8px 12px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(0, 122, 255, 0.12);
+  border: 1px solid rgba(0, 122, 255, 0.12);
   border-radius: 8px;
   font-size: 12px;
-  color: var(--vct-warning);
+  color: var(--mfc-color-warning);
   text-align: center;
   .offline-icon {
     margin-right: 4px;

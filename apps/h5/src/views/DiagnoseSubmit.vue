@@ -248,12 +248,12 @@ async function submit() {
   margin: 0 16px 12px;
   .quota-label {
     font-size: 11px;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
   }
   .quota-num {
     font-size: 18px;
     font-weight: 600;
-    color: var(--vct-primary);
+    color: var(--mfc-blue);
   }
 }
 .form {
@@ -266,7 +266,7 @@ async function submit() {
 }
 .dim-title {
   font-size: 13px;
-  color: var(--vct-text-2);
+  color: var(--mfc-fg-2);
   margin-bottom: 12px;
 }
 .dim-grid {
@@ -274,8 +274,8 @@ async function submit() {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   .dim-pill {
-    background: var(--vct-surface);
-    border: 1px solid var(--vct-border);
+    background: var(--mfc-bg-soft);
+    border: 1px solid var(--mfc-hairline);
     padding: 10px 6px;
     border-radius: 8px;
     text-align: center;
@@ -295,7 +295,7 @@ async function submit() {
 .tip {
   text-align: center;
   font-size: 11px;
-  color: var(--vct-text-3);
+  color: var(--mfc-fg-3);
   margin-bottom: 8px;
 }
 </style>

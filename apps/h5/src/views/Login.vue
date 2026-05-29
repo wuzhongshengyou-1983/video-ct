@@ -207,11 +207,11 @@ async function login() {
     font-size: 36px;
     font-weight: 800;
     span {
-      color: var(--vct-primary);
+      color: var(--mfc-blue);
     }
   }
   .tag {
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     font-size: 13px;
     margin-top: 4px;
   }
@@ -221,15 +221,15 @@ async function login() {
   scroll-margin-bottom: 40vh;
 }
 .referrer-tip {
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(88, 86, 214, 0.12);
+  border: 1px solid rgba(88, 86, 214, 0.12);
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 12px;
-  color: var(--vct-accent);
+  color: var(--mfc-indigo);
   margin: 16px 0 4px;
   strong {
-    color: var(--vct-primary);
+    color: var(--mfc-blue);
   }
 }
 .login-btn {
@@ -247,12 +247,12 @@ async function login() {
   .divider-line {
     flex: 1;
     height: 1px;
-    background: var(--vct-border);
+    background: var(--mfc-hairline);
   }
   .divider-text {
     padding: 0 12px;
     font-size: 12px;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
   }
 }
 .wechat-login-btn {
@@ -270,12 +270,12 @@ async function login() {
   margin-top: 16px;
   text-align: center;
   font-size: 11px;
-  color: var(--vct-text-3);
+  color: var(--mfc-fg-3);
   code {
-    background: var(--vct-surface);
+    background: var(--mfc-bg-soft);
     padding: 2px 6px;
     border-radius: 4px;
-    color: var(--vct-primary);
+    color: var(--mfc-blue);
   }
 }
 </style>

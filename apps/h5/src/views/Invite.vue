@@ -6,8 +6,13 @@
 
       <div v-if="refCode" class="ref-card vct-card glow">
         <div class="ref-icon">🎁</div>
-        <div class="ref-text">受 <strong>{{ refCode }}</strong> 邀请</div>
-        <div class="ref-benefit">注册即享首单 9 折优惠 · 付费返 {{ REFERRER_REWARD_CNY }} 元 · 满 {{ REFERRER_DEDUCT_COUNT }} 人抵 PRO 月卡</div>
+        <div class="ref-text">
+          受 <strong>{{ refCode }}</strong> 邀请
+        </div>
+        <div class="ref-benefit">
+          注册即享首单 9 折优惠 · 付费返 {{ REFERRER_REWARD_CNY }} 元 · 满
+          {{ REFERRER_DEDUCT_COUNT }} 人抵 PRO 月卡
+        </div>
       </div>
 
       <div class="features">
@@ -36,57 +41,100 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { REFERRER_REWARD_CNY, REFERRER_DEDUCT_COUNT } from '@video-ct/shared'
-import { useWechatShare, SHARE_TEXT } from '@/composables/useWechatShare'
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { REFERRER_REWARD_CNY, REFERRER_DEDUCT_COUNT } from "@video-ct/shared";
+import { useWechatShare, SHARE_TEXT } from "@/composables/useWechatShare";
 
-const router = useRouter()
-const route = useRoute()
-const refCode = ref<string | null>(null)
-const { updateShare } = useWechatShare()
+const router = useRouter();
+const route = useRoute();
+const refCode = ref<string | null>(null);
+const { updateShare } = useWechatShare();
 
 onMounted(() => {
-  updateShare(SHARE_TEXT.invite.title, SHARE_TEXT.invite.desc)
-  const code = route.query.ref as string
+  updateShare(SHARE_TEXT.invite.title, SHARE_TEXT.invite.desc);
+  const code = route.query.ref as string;
   if (code) {
-    refCode.value = code
-    localStorage.setItem('vct_ref', code)
+    refCode.value = code;
+    localStorage.setItem("vct_ref", code);
   } else {
-    refCode.value = localStorage.getItem('vct_ref')
+    refCode.value = localStorage.getItem("vct_ref");
   }
-})
+});
 
 function goLogin() {
-  router.push({ path: '/login', query: { ref: refCode.value || undefined } })
+  router.push({ path: "/login", query: { ref: refCode.value || undefined } });
 }
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
-.invite-hero { text-align: center; padding: 60px 0 40px; }
-.logo {
-  font-size: 42px; font-weight: 800; letter-spacing: 3px;
-  span { color: var(--vct-primary); text-shadow: 0 0 24px rgba(245,158,11,0.5); }
+.page {
+  min-height: 100vh;
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px));
 }
-.tag { font-size: 14px; color: var(--vct-text-2); margin-top: 8px; }
+.invite-hero {
+  text-align: center;
+  padding: 60px 0 40px;
+}
+.logo {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  span {
+    color: var(--mfc-blue);
+    text-shadow: 0 0 24px rgba(0, 122, 255, 0.12);
+  }
+}
+.tag {
+  font-size: 14px;
+  color: var(--mfc-fg-2);
+  margin-top: 8px;
+}
 
 .ref-card {
-  margin: 32px 0; padding: 20px;
-  background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(245,158,11,0.08));
-  border-color: rgba(56,189,248,0.3);
-  .ref-icon { font-size: 36px; }
-  .ref-text { font-size: 16px; font-weight: 600; margin: 8px 0 4px;
-    strong { color: var(--vct-primary); }
+  margin: 32px 0;
+  padding: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(88, 86, 214, 0.12),
+    rgba(0, 122, 255, 0.12)
+  );
+  border-color: rgba(88, 86, 214, 0.12);
+  .ref-icon {
+    font-size: 36px;
   }
-  .ref-benefit { font-size: 12px; color: var(--vct-accent); }
+  .ref-text {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 8px 0 4px;
+    strong {
+      color: var(--mfc-blue);
+    }
+  }
+  .ref-benefit {
+    font-size: 12px;
+    color: var(--mfc-indigo);
+  }
 }
 
 .features {
-  display: flex; justify-content: space-around; margin: 32px 0;
-  .feature-item { text-align: center; }
-  .icon { font-size: 32px; }
-  .title { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
-  .desc { font-size: 11px; color: var(--vct-text-3); }
+  display: flex;
+  justify-content: space-around;
+  margin: 32px 0;
+  .feature-item {
+    text-align: center;
+  }
+  .icon {
+    font-size: 32px;
+  }
+  .title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 8px 0 4px;
+  }
+  .desc {
+    font-size: 11px;
+    color: var(--mfc-fg-3);
+  }
 }
 </style>

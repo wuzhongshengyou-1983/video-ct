@@ -1,0 +1,268 @@
+/* =====================================================================
+   metafoclaw Design System · v1.2 Design Tokens
+   ---------------------------------------------------------------------
+   v1.0 (2026-05-27): 首版 Vercel Light + 高密度 + framer-motion 三决策
+   v1.1 (2026-05-27): 移动端兼容（断点 / safe-area / 触控 44pt / 表格降级）
+   v1.2 (2026-05-27): 并入 iCloud 样张精致元素
+                      · Apple System 7 色板
+                      · 0.5px hairline + 三层 shadow（极轻）
+                      · 圆角刻度扩 18 / 22
+                      · 健康分渐变 / 节点 glow ring / sparkline
+   ---------------------------------------------------------------------
+   适用：metafoclaw 所有前端产物
+   引用：在 globals.css 顶部 @import './tokens.css';
+   权威：DESIGN-SYSTEM.md
+   ===================================================================== */
+
+:root {
+  /* ============ Surfaces ============ */
+  --mfc-bg: #ffffff; /* 主背景 · 纯白（Vercel Light 骨架）*/
+  --mfc-bg-soft: #fafafa; /* 次级背景 */
+  --mfc-bg-chip: #f4f4f5; /* chip / pill */
+  --mfc-bg-elev: #ffffff; /* 卡片 */
+  --mfc-bg-elev-2: #fbfbfd; /* 卡片次级（Apple 风） v1.2 */
+  --mfc-bg-hover: #fafafa;
+  --mfc-bg-active: #f4f4f5; /* hover / chip 加深态 v1.2 */
+
+  /* ============ Hairlines · 0.5px rgba (iCloud 同款) v1.2 ============ */
+  --mfc-hairline: rgba(0, 0, 0, 0.06); /* 默认 0.5px 分割 */
+  --mfc-hairline-strong: rgba(0, 0, 0, 0.1); /* hover / focus */
+  --mfc-hairline-input: rgba(0, 0, 0, 0.13); /* input 边框 */
+  /* 兼容：旧 1px 版本（逐步迁移）*/
+  --mfc-line: #eaeaea;
+  --mfc-line-strong: #e5e5e5;
+  --mfc-line-input: #d4d4d8;
+
+  /* ============ Text (5 阶灰度 · Apple 标准) v1.2 ============ */
+  --mfc-fg: #1d1d1f; /* 主文字 · Apple 黑 */
+  --mfc-fg-1: #1d1d1f;
+  --mfc-fg-2: #6e6e73; /* Apple 灰 */
+  --mfc-fg-3: #86868b; /* Apple 三级灰 */
+  --mfc-fg-4: #a1a1a6; /* Apple 四级灰 */
+  --mfc-fg-5: #d2d2d7; /* Apple separator */
+
+  /* ============ Apple System 7 色板 v1.2 ============ */
+  --mfc-blue: #007aff; /* System Blue · 主 accent */
+  --mfc-green: #34c759; /* System Green · 健康/成功 */
+  --mfc-orange: #ff9500; /* System Orange · 警告 */
+  --mfc-red: #ff3b30; /* System Red · 错误 */
+  --mfc-purple: #af52de; /* System Purple · AI / 元衡 */
+  --mfc-indigo: #5856d6; /* System Indigo · AI 渐变起点 */
+  --mfc-teal: #5ac8fa; /* System Teal · 健康分渐变终点 */
+  /* 浅底色（用于 banner / tag bg）*/
+  --mfc-blue-soft: rgba(0, 122, 255, 0.1);
+  --mfc-green-soft: rgba(52, 199, 89, 0.12);
+  --mfc-orange-soft: rgba(255, 149, 0, 0.12);
+  --mfc-red-soft: rgba(255, 59, 48, 0.12);
+  --mfc-purple-soft: rgba(175, 82, 222, 0.1);
+  --mfc-indigo-soft: rgba(88, 86, 214, 0.08);
+
+  /* ============ Accent (主品牌 · 1-2 处) ============ */
+  --mfc-accent: var(--mfc-blue);
+  --mfc-accent-bg: var(--mfc-blue-soft);
+
+  /* ============ Semantic (沉色版 · 配高对比 chip 文字) ============ */
+  --mfc-color-success: #0a7d4a;
+  --mfc-color-success-bg: #e6f4ec;
+  --mfc-color-warning: #c2410c;
+  --mfc-color-warning-bg: #fef3e6;
+  --mfc-color-danger: #d4183d;
+  --mfc-color-danger-bg: #fde8ec;
+
+  /* ============ Radii · 扩到 22px（iCloud 同款）v1.2 ============ */
+  --mfc-r-xs: 4px;
+  --mfc-r-sm: 6px;
+  --mfc-r: 8px;
+  --mfc-r-lg: 10px;
+  --mfc-r-xl: 12px;
+  --mfc-r-2xl: 18px; /* hero card · v1.2 */
+  --mfc-r-3xl: 22px; /* feature card · v1.2 */
+
+  /* ============ Shadow · 3 档（极轻 + 0.5px ring）v1.2 ============ */
+  --mfc-shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --mfc-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --mfc-shadow-lg:
+    0 12px 32px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  /* 默认仍优先 hairline，shadow 用于：popover / modal / floating / 重要 KPI 卡 */
+
+  /* ============ Gradients (Apple 风 · 仅用于品牌 logo / AI icon / 健康分)v1.2 ============ */
+  --mfc-gradient-brand: linear-gradient(
+    135deg,
+    #007aff 0%,
+    #5856d6 100%
+  ); /* 蓝→靛 · brand logo */
+  --mfc-gradient-ai: linear-gradient(
+    135deg,
+    #5856d6 0%,
+    #007aff 100%
+  ); /* 靛→蓝 · AI icon */
+  --mfc-gradient-health: linear-gradient(
+    135deg,
+    #34c759 0%,
+    #5ac8fa 100%
+  ); /* 绿→青 · 健康分 */
+  --mfc-gradient-warn: linear-gradient(
+    135deg,
+    #ff9500 0%,
+    #ff3b30 100%
+  ); /* 橙→红 · 告警 */
+
+  /* ============ Typography ============ */
+  --mfc-font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang SC",
+    "Helvetica Neue", sans-serif;
+  --mfc-font-mono:
+    ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* ============ Timing ============ */
+  --mfc-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mfc-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mfc-dur-fast: 150ms;
+  --mfc-dur-normal: 420ms;
+  --mfc-dur-spring: 600ms;
+  --mfc-dur-chart: 800ms;
+
+  /* ============ Layout ============ */
+  --mfc-shell-max: 1280px;
+  --mfc-shell-pad: 32px;
+  --mfc-shell-pad-sm: 20px;
+  --mfc-grid-gap: 12px;
+  --mfc-section-gap: 16px;
+  --mfc-section-pad: 64px;
+  --mfc-card-pad: 18px 20px;
+  --mfc-card-pad-lg: 22px 24px; /* 大卡片（hero / health）v1.2 */
+  --mfc-topbar-h: 52px; /* iCloud 同款 52px v1.2 */
+  --mfc-sidebar-w: 220px;
+}
+
+/* =====================================================================
+   Base styles
+   ===================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--mfc-bg);
+  color: var(--mfc-fg);
+  font-family: var(--mfc-font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  font-feature-settings: "tnum", "ss01";
+  letter-spacing: -0.01em;
+}
+
+/* =====================================================================
+   Animation utilities
+   ===================================================================== */
+
+@keyframes mfc-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes mfc-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mfc-spring-num {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes mfc-live-pulse {
+  /* v1.2 实时指示器双层 glow */
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(52, 199, 89, 0);
+  }
+}
+@keyframes mfc-caret-blink {
+  /* v1.2 typewriter caret */
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes mfc-dash-flow {
+  /* v1.2 拓扑边流动 */
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.mfc-fx {
+  animation: mfc-fade-in-up var(--mfc-dur-normal) var(--mfc-ease-out) both;
+}
+.mfc-fx-1 {
+  animation-delay: 60ms;
+}
+.mfc-fx-2 {
+  animation-delay: 120ms;
+}
+.mfc-fx-3 {
+  animation-delay: 180ms;
+}
+.mfc-fx-4 {
+  animation-delay: 240ms;
+}
+.mfc-fx-5 {
+  animation-delay: 300ms;
+}
+.mfc-spring {
+  animation: mfc-spring-num var(--mfc-dur-spring) var(--mfc-ease-spring) both;
+}
+
+/* =====================================================================
+   Responsive · Mobile-first (v1.1)
+   ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
+
+@media (hover: none) {
+  .mfc-no-touch-hover:hover {
+    background: inherit !important;
+  }
+}
+
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+}

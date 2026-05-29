@@ -327,7 +327,7 @@ onMounted(loadProfile);
     border-radius: 50%;
     cursor: pointer;
     overflow: hidden;
-    border: 2px solid var(--vct-border);
+    border: 2px solid var(--mfc-hairline);
     .avatar-img {
       width: 100%;
       height: 100%;
@@ -336,11 +336,7 @@ onMounted(loadProfile);
     .avatar-placeholder {
       width: 100%;
       height: 100%;
-      background: linear-gradient(
-        135deg,
-        var(--vct-primary),
-        var(--vct-accent)
-      );
+      background: linear-gradient(135deg, var(--mfc-blue), var(--mfc-indigo));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -361,12 +357,12 @@ onMounted(loadProfile);
   }
   .avatar-tip {
     font-size: 11px;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
     margin-top: 8px;
   }
   .avatar-error {
     font-size: 11px;
-    color: var(--vct-danger);
+    color: var(--mfc-color-danger);
     margin-top: 4px;
   }
 }
@@ -388,7 +384,7 @@ onMounted(loadProfile);
   text-align: center;
   padding: 24px;
   p {
-    color: var(--vct-danger);
+    color: var(--mfc-color-danger);
     font-size: 13px;
     margin-bottom: 12px;
   }

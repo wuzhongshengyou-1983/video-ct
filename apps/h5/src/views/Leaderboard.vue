@@ -186,7 +186,7 @@ onMounted(async () => {
   }
   .board-sub {
     font-size: 12px;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
     margin-top: 4px;
   }
 }
@@ -202,11 +202,11 @@ onMounted(async () => {
   gap: 12px;
   padding: 12px 14px;
   &.top-1 {
-    border-color: rgba(245, 158, 11, 0.5);
+    border-color: rgba(0, 122, 255, 0.12);
     background: linear-gradient(
       135deg,
-      rgba(245, 158, 11, 0.12),
-      rgba(245, 158, 11, 0.03)
+      rgba(0, 122, 255, 0.12),
+      rgba(0, 122, 255, 0.12)
     );
   }
   &.top-2 {
@@ -237,7 +237,7 @@ onMounted(async () => {
   &.normal {
     font-size: 14px;
     font-weight: 700;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
   }
 }
 
@@ -245,7 +245,7 @@ onMounted(async () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--vct-primary), var(--vct-accent));
+  background: linear-gradient(135deg, var(--mfc-blue), var(--mfc-indigo));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -264,7 +264,7 @@ onMounted(async () => {
 }
 .user-level {
   font-size: 11px;
-  color: var(--vct-text-3);
+  color: var(--mfc-fg-3);
   margin-top: 2px;
 }
 
@@ -274,11 +274,11 @@ onMounted(async () => {
 .stat-referrals {
   font-size: 14px;
   font-weight: 600;
-  color: var(--vct-primary);
+  color: var(--mfc-blue);
 }
 .stat-reward {
   font-size: 11px;
-  color: var(--vct-text-3);
+  color: var(--mfc-fg-3);
 }
 
 .error-box {
@@ -286,7 +286,7 @@ onMounted(async () => {
   text-align: center;
   padding: 24px;
   p {
-    color: var(--vct-danger);
+    color: var(--mfc-color-danger);
     font-size: 13px;
     margin-bottom: 12px;
   }

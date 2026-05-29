@@ -341,29 +341,29 @@ onMounted(() => {
   text-align: center;
   background: linear-gradient(
     135deg,
-    rgba(245, 158, 11, 0.12),
-    rgba(56, 189, 248, 0.06)
+    rgba(0, 122, 255, 0.12),
+    rgba(88, 86, 214, 0.12)
   );
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(0, 122, 255, 0.12);
   .level-badge {
     display: inline-block;
     padding: 4px 16px;
     border-radius: 999px;
     font-size: 13px;
     font-weight: 700;
-    background: var(--vct-surface);
-    color: var(--vct-text-2);
+    background: var(--mfc-bg-soft);
+    color: var(--mfc-fg-2);
     &.silver {
       background: rgba(192, 192, 192, 0.2);
       color: #c0c0c0;
     }
     &.gold {
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--vct-primary);
+      background: rgba(0, 122, 255, 0.12);
+      color: var(--mfc-blue);
     }
     &.diamond {
-      background: rgba(56, 189, 248, 0.2);
-      color: var(--vct-accent);
+      background: rgba(88, 86, 214, 0.12);
+      color: var(--mfc-indigo);
     }
   }
   .stats-row {
@@ -377,20 +377,20 @@ onMounted(() => {
   .stat-num {
     font-size: 24px;
     font-weight: 800;
-    color: var(--vct-text);
+    color: var(--mfc-fg);
     &.balance {
-      color: var(--vct-primary);
+      color: var(--mfc-blue);
     }
   }
   .stat-label {
     font-size: 11px;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
     margin-top: 2px;
   }
   .next-level {
     font-size: 12px;
-    color: var(--vct-accent);
-    background: rgba(56, 189, 248, 0.1);
+    color: var(--mfc-indigo);
+    background: rgba(88, 86, 214, 0.12);
     display: inline-block;
     padding: 2px 12px;
     border-radius: 999px;
@@ -404,17 +404,17 @@ onMounted(() => {
   .link-text {
     flex: 1;
     font-size: 12px;
-    color: var(--vct-text-2);
+    color: var(--mfc-fg-2);
     word-break: break-all;
-    background: var(--vct-surface);
+    background: var(--mfc-bg-soft);
     padding: 8px 10px;
     border-radius: 8px;
-    border: 1px solid var(--vct-border);
+    border: 1px solid var(--mfc-hairline);
   }
 }
 .link-tip {
   font-size: 11px;
-  color: var(--vct-text-3);
+  color: var(--mfc-fg-3);
   margin-top: 10px;
 }
 
@@ -426,7 +426,7 @@ onMounted(() => {
 }
 .no-data {
   font-size: 13px;
-  color: var(--vct-text-3);
+  color: var(--mfc-fg-3);
   padding: 16px 0;
   text-align: center;
 }
@@ -436,7 +436,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px dashed var(--vct-border);
+  border-bottom: 1px dashed var(--mfc-hairline);
   &:last-child {
     border-bottom: none;
   }
@@ -446,13 +446,13 @@ onMounted(() => {
   }
   .record-meta {
     font-size: 11px;
-    color: var(--vct-text-3);
+    color: var(--mfc-fg-3);
     margin-top: 2px;
   }
   .record-reward {
     font-size: 14px;
     font-weight: 600;
-    color: var(--vct-primary);
+    color: var(--mfc-blue);
   }
 }
 
@@ -461,7 +461,7 @@ onMounted(() => {
   text-align: center;
   padding: 24px;
   p {
-    color: var(--vct-danger);
+    color: var(--mfc-color-danger);
     font-size: 13px;
     margin-bottom: 12px;
   }
