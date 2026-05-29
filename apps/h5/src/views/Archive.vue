@@ -100,7 +100,7 @@
 
           <!-- 六维指标变化 -->
           <div class="curve-block">
-            <div class="block-label">六维评分趋势</div>
+            <div class="block-label">多维评分趋势</div>
             <div v-if="dimTrends.length" class="dim-trends">
               <div v-for="d in dimTrends" :key="d.name" class="trend-row">
                 <div class="trend-name">{{ d.name }}</div>

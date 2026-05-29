@@ -3,7 +3,7 @@
     <!-- 顶部：身份/欢迎 -->
     <header class="hero">
       <div class="logo">视频 <span>CT</span></div>
-      <div class="tagline">像影像科医生一样诊断短视频</div>
+      <div class="tagline">数据实证驱动 · AI 精准诊断你的短视频</div>
       <div class="hero-stats">
         <div class="stat-pill">
           <div class="num">{{ usedCount }}/{{ quota }}</div>
@@ -22,7 +22,7 @@
         <div class="cta-icon">⚡</div>
         <div class="cta-text">
           <div class="cta-title">给你的视频做一次 CT 扫描</div>
-          <div class="cta-sub">6 维 18 点位 · 90 秒出报告</div>
+          <div class="cta-sub">38 维 8 组 · 数据实证 · 秒级出报告</div>
         </div>
         <van-icon name="arrow" />
       </div>
@@ -43,7 +43,7 @@
       <div class="grid-item" @click="router.push('/archive')">
         <div class="icon">📈</div>
         <div class="title">成长档案</div>
-        <div class="sub">头部差距进度</div>
+        <div class="sub">数据飞轮进度</div>
       </div>
     </section>
 
@@ -52,7 +52,7 @@
       <div class="vct-card bind-account-banner" @click="showBindPopup = true">
         <div class="bind-left">
           <div class="bind-title">📱 绑定你的短视频账号</div>
-          <div class="bind-sub">解锁账号健康分 · 追踪长期成长曲线</div>
+          <div class="bind-sub">解锁数据仪表盘 · 追踪真实成长曲线</div>
         </div>
         <van-icon name="arrow" class="bind-arrow" />
       </div>

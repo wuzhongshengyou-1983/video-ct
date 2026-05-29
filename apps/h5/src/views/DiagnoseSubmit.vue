@@ -53,7 +53,7 @@
       </van-cell-group>
 
       <div class="dim-list">
-        <div class="dim-title">本次将对以下 6 个维度做 CT 扫描</div>
+        <div class="dim-title">本次将对以下 8 组 38 个维度做全面扫描</div>
         <div class="dim-grid">
           <div v-for="d in dims" :key="d.name" class="dim-pill">
             <span class="emoji">{{ d.emoji }}</span>
@@ -128,8 +128,11 @@ const trackPickerShow = ref(false);
 const typePickerShow = ref(false);
 const tracks = ref<{ text: string; value: string }[]>([]);
 const diagnosisTypes = [
-  { text: "基础 CT（6 维评分 + 修复建议）", value: DIAGNOSIS_TYPES.CT_BASIC },
-  { text: "完整 CT（含病灶时间戳定位）", value: DIAGNOSIS_TYPES.CT_FULL },
+  { text: "基础 CT（38 维评分 + 修复建议）", value: DIAGNOSIS_TYPES.CT_BASIC },
+  {
+    text: "完整 CT（含时间戳 + 真实数据校准）",
+    value: DIAGNOSIS_TYPES.CT_FULL,
+  },
 ];
 const dims = [
   { name: "表层观感", emoji: "👁" },

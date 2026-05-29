@@ -38,7 +38,7 @@
 
           <!-- 雷达图（简易 SVG） -->
           <section class="vct-card">
-            <div class="vct-section-title">📡 6 维雷达图</div>
+            <div class="vct-section-title">📡 多维度雷达图</div>
             <RadarChart :scores="dimScores" />
           </section>
 

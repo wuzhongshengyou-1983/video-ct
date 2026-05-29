@@ -7,7 +7,7 @@
       <div class="cta-icon">⚡</div>
       <div class="cta-text">
         <div class="cta-title">新建诊断</div>
-        <div class="cta-sub">粘贴视频链接，AI 30 秒出报告</div>
+        <div class="cta-sub">粘贴视频链接 · 数据实证出报告</div>
       </div>
       <van-icon name="arrow" />
     </div>

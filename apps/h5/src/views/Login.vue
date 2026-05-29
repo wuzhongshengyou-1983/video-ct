@@ -4,7 +4,7 @@
 
     <div class="hero">
       <div class="logo">视频 <span>CT</span></div>
-      <div class="tag">用医学 CT 方式诊断你的短视频</div>
+      <div class="tag">数据实证 · AI 精准诊断你的短视频</div>
     </div>
 
     <div class="vct-card form">
