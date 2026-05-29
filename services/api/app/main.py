@@ -9,6 +9,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, ORJSONResponse
 from loguru import logger
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    _SENTRY_AVAILABLE = True
+except ImportError:
+    _SENTRY_AVAILABLE = False
+
 from app import __version__
 from app.api import api_router
 from app.api.ws import router as ws_router
@@ -17,6 +25,17 @@ from app.core.exceptions import BizException
 from app.core.middleware import ExceptionMiddleware
 from app.core.rate_limit import RateLimitMiddleware
 from app.database import Base, engine
+
+
+# Sentry 初始化（仅在配置了 DSN 时启用）
+if _SENTRY_AVAILABLE and settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        environment=settings.NODE_ENV,
+    )
+    logger.info("Sentry 已初始化")
 
 
 @asynccontextmanager

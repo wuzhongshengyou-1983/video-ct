@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     API_BASE_URL: str = "http://localhost:8000"
 
+    # Sentry（可选，留空则不启用）
+    SENTRY_DSN: str = ""
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+
     # JWT（A1: access 短效 + refresh 轮换）
     JWT_SECRET: str = "dev-secret-change-me"
     JWT_ALGORITHM: str = "HS256"
