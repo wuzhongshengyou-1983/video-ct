@@ -164,6 +164,18 @@ export const analyticsApi = {
     ),
 };
 
+// 账号实体
+export const accountsApi = {
+  mine: () => http.get<unknown, any[]>("/api/v1/accounts/mine"),
+  create: (data: {
+    platform: string;
+    nickname?: string;
+    platform_account_id?: string;
+    track?: string;
+    follower_count?: number;
+  }) => http.post<unknown, any>("/api/v1/accounts", data),
+};
+
 // 微信
 export const wechatApi = {
   jsSdkSign: (url: string) =>

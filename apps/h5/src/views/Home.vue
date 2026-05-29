@@ -47,6 +47,129 @@
       </div>
     </section>
 
+    <!-- 绑定账号入口（未绑定时显示） -->
+    <section v-if="!accountLoading && myAccounts.length === 0">
+      <div class="vct-card bind-account-banner" @click="showBindPopup = true">
+        <div class="bind-left">
+          <div class="bind-title">📱 绑定你的短视频账号</div>
+          <div class="bind-sub">解锁账号健康分 · 追踪长期成长曲线</div>
+        </div>
+        <van-icon name="arrow" class="bind-arrow" />
+      </div>
+    </section>
+
+    <!-- 已绑定账号快速卡 -->
+    <section v-if="!accountLoading && myAccounts.length > 0">
+      <div class="vct-section-title">
+        📱 我的账号
+        <van-button size="mini" plain @click="showBindPopup = true"
+          >+ 添加</van-button
+        >
+      </div>
+      <div class="my-accounts">
+        <div
+          v-for="acc in myAccounts"
+          :key="acc.id"
+          class="account-chip vct-card"
+        >
+          <span class="acc-platform">{{
+            PLATFORM_LABELS[acc.platform] || acc.platform
+          }}</span>
+          <span class="acc-name">{{ acc.nickname || "未设置昵称" }}</span>
+          <span class="acc-fans">{{
+            acc.follower_count > 0
+              ? formatFollowerCount(acc.follower_count) + " 粉"
+              : ""
+          }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 绑定账号弹层 -->
+    <van-popup
+      v-model:show="showBindPopup"
+      position="bottom"
+      round
+      :style="{ maxHeight: '80vh' }"
+    >
+      <div class="bind-popup">
+        <div class="popup-title">绑定短视频账号</div>
+        <van-form @submit="submitBind" ref="bindFormRef">
+          <van-cell-group inset>
+            <van-field
+              label="平台"
+              name="platform"
+              readonly
+              clickable
+              :model-value="PLATFORM_LABELS[bindForm.platform] || '选择平台'"
+              @click="showPlatformPicker = true"
+              :rules="[{ required: true, message: '请选择平台' }]"
+            />
+            <van-field
+              v-model="bindForm.nickname"
+              label="账号昵称"
+              name="nickname"
+              placeholder="抖音昵称 / B站ID..."
+              :rules="[{ required: true, message: '请填写昵称' }]"
+            />
+            <van-field
+              v-model.number="bindForm.follower_count"
+              label="粉丝数"
+              name="follower_count"
+              type="digit"
+              placeholder="当前粉丝数（选填）"
+            />
+            <van-field
+              label="赛道"
+              name="track"
+              readonly
+              clickable
+              :model-value="bindForm.track || '选择赛道（选填）'"
+              @click="showTrackPicker = true"
+            />
+          </van-cell-group>
+          <div class="bind-actions">
+            <van-button
+              block
+              type="primary"
+              native-type="submit"
+              :loading="bindLoading"
+            >
+              确认绑定
+            </van-button>
+            <van-button
+              block
+              plain
+              @click="showBindPopup = false"
+              style="margin-top: 8px"
+            >
+              取消
+            </van-button>
+          </div>
+        </van-form>
+      </div>
+    </van-popup>
+
+    <!-- 平台选择器 -->
+    <van-popup v-model:show="showPlatformPicker" position="bottom" round>
+      <van-picker
+        :columns="PLATFORM_OPTIONS"
+        @confirm="onPlatformConfirm"
+        @cancel="showPlatformPicker = false"
+        title="选择平台"
+      />
+    </van-popup>
+
+    <!-- 赛道选择器 -->
+    <van-popup v-model:show="showTrackPicker" position="bottom" round>
+      <van-picker
+        :columns="TRACK_OPTIONS"
+        @confirm="onTrackConfirm"
+        @cancel="showTrackPicker = false"
+        title="选择赛道"
+      />
+    </van-popup>
+
     <!-- 头部对标榜 -->
     <section>
       <div class="vct-section-title">
@@ -106,10 +229,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
-import { benchmarkApi } from "@/api";
+import { benchmarkApi, accountsApi } from "@/api";
 import {
   formatFollowerCount,
   getTierLabel,
@@ -119,12 +242,85 @@ import {
 import SkeletonCard from "@/components/SkeletonCard.vue";
 import { trackClick } from "@/utils/tracker";
 import { useWechatShare, SHARE_TEXT } from "@/composables/useWechatShare";
+import { showSuccessToast, showFailToast } from "vant";
 
 const router = useRouter();
 const userStore = useUserStore();
 
 const benchmarkTop = ref<any[]>([]);
 const benchmarkLoading = ref(true);
+
+// 账号绑定
+const myAccounts = ref<any[]>([]);
+const accountLoading = ref(true);
+const showBindPopup = ref(false);
+const showPlatformPicker = ref(false);
+const showTrackPicker = ref(false);
+const bindLoading = ref(false);
+const bindForm = reactive({
+  platform: "",
+  nickname: "",
+  follower_count: 0,
+  track: "",
+});
+
+const PLATFORM_LABELS: Record<string, string> = {
+  douyin: "抖音",
+  bilibili: "B站",
+  xiaohongshu: "小红书",
+};
+const PLATFORM_OPTIONS = [
+  { text: "抖音", value: "douyin" },
+  { text: "B站", value: "bilibili" },
+  { text: "小红书", value: "xiaohongshu" },
+];
+const TRACK_OPTIONS = [
+  { text: "职场干货", value: "职场干货" },
+  { text: "情感生活", value: "情感生活" },
+  { text: "美食探店", value: "美食探店" },
+  { text: "知识科普", value: "知识科普" },
+  { text: "娱乐搞笑", value: "娱乐搞笑" },
+  { text: "母婴育儿", value: "母婴育儿" },
+  { text: "健身运动", value: "健身运动" },
+  { text: "其他", value: "其他" },
+];
+
+function onPlatformConfirm({ selectedOptions }: any) {
+  bindForm.platform = selectedOptions[0]?.value ?? "";
+  showPlatformPicker.value = false;
+}
+
+function onTrackConfirm({ selectedOptions }: any) {
+  bindForm.track = selectedOptions[0]?.value ?? "";
+  showTrackPicker.value = false;
+}
+
+async function submitBind() {
+  if (!bindForm.platform) return;
+  bindLoading.value = true;
+  try {
+    const account = await accountsApi.create({
+      platform: bindForm.platform,
+      nickname: bindForm.nickname || undefined,
+      track: bindForm.track || undefined,
+      follower_count: bindForm.follower_count || 0,
+    });
+    myAccounts.value.unshift(account);
+    showBindPopup.value = false;
+    showSuccessToast("账号绑定成功");
+    trackClick("bind_account");
+    Object.assign(bindForm, {
+      platform: "",
+      nickname: "",
+      follower_count: 0,
+      track: "",
+    });
+  } catch {
+    showFailToast("绑定失败，请重试");
+  } finally {
+    bindLoading.value = false;
+  }
+}
 const agents = ref([
   { name: "CTRadiologist", role: "CT 诊断官", emoji: "🩺" },
   { name: "BenchmarkAnalyst", role: "对标分析师", emoji: "📊" },
@@ -158,13 +354,14 @@ const { updateShare } = useWechatShare();
 
 onMounted(async () => {
   updateShare(SHARE_TEXT.home.title, SHARE_TEXT.home.desc);
-  try {
-    benchmarkTop.value = await benchmarkApi.top10("职场干货");
-  } catch {
-    /* ignore */
-  } finally {
-    benchmarkLoading.value = false;
-  }
+  const [benchmarks, accounts] = await Promise.allSettled([
+    benchmarkApi.top10("职场干货"),
+    accountsApi.mine(),
+  ]);
+  if (benchmarks.status === "fulfilled") benchmarkTop.value = benchmarks.value;
+  benchmarkLoading.value = false;
+  if (accounts.status === "fulfilled") myAccounts.value = accounts.value;
+  accountLoading.value = false;
 });
 </script>
 
@@ -350,6 +547,73 @@ onMounted(async () => {
     font-size: 11px;
     color: var(--mfc-fg-2);
     margin-top: 4px;
+  }
+}
+.bind-account-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.06),
+    rgba(88, 86, 214, 0.06)
+  );
+  border: 1px dashed rgba(0, 122, 255, 0.3);
+  .bind-left {
+    flex: 1;
+    .bind-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .bind-sub {
+      font-size: 12px;
+      color: var(--mfc-fg-2);
+      margin-top: 4px;
+    }
+  }
+  .bind-arrow {
+    color: var(--mfc-fg-3);
+  }
+}
+.my-accounts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  .account-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    .acc-platform {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mfc-blue);
+      background: rgba(0, 122, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .acc-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .acc-fans {
+      font-size: 11px;
+      color: var(--mfc-fg-3);
+    }
+  }
+}
+.bind-popup {
+  padding: 24px 16px calc(32px + env(safe-area-inset-bottom, 0px));
+  .popup-title {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--mfc-fg);
+  }
+  .bind-actions {
+    padding: 20px 16px 0;
   }
 }
 </style>

@@ -48,6 +48,17 @@ class DiagnosisBrief(BaseModel):
 
 # ── 端点 ───────────────────────────────────────────────────────────────────
 
+@router.get("/mine", response_model=list[AccountOut])
+async def list_my_accounts(db: DbSession, user: CurrentUser):
+    """列出当前用户所有绑定账号."""
+    rows = await db.execute(
+        select(AccountEntity)
+        .where(AccountEntity.user_id == user.id, AccountEntity.is_active == True)
+        .order_by(AccountEntity.created_at.desc())
+    )
+    return [AccountOut.model_validate(a) for a in rows.scalars().all()]
+
+
 @router.post("", response_model=AccountOut, status_code=201)
 async def create_account(payload: AccountCreate, db: DbSession, user: CurrentUser):
     """创建账号实体（绑定当前用户）."""
