@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { trackPageView } from '@/utils/tracker'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/home' },
@@ -56,6 +57,35 @@ router.beforeEach(async (to) => {
     try { await userStore.fetchMe() } catch { /* ignore */ }
   }
   return true
+})
+
+// 路径 → 埋点页面名映射（统一全局 page_view，无需每个组件单独调用）
+const PAGE_NAMES: Record<string, string> = {
+  '/home': 'home',
+  '/diagnose': 'diagnose',
+  '/diagnose/submit': 'diagnose_submit',
+  '/diagnose/resubmit': 'diagnose_resubmit',
+  '/archive': 'archive',
+  '/persona': 'persona',
+  '/positioning': 'positioning',
+  '/subscribe': 'subscribe',
+  '/referrer': 'referrer',
+  '/leaderboard': 'leaderboard',
+  '/me': 'me',
+  '/me/profile': 'profile',
+  '/login': 'login',
+  '/invite': 'invite',
+}
+
+router.afterEach((to) => {
+  // 动态路由取前缀匹配（如 /diagnose/:id → diagnose_detail）
+  const path = to.path
+  let pageName =
+    PAGE_NAMES[path] ??
+    (path.startsWith('/diagnose/') ? 'diagnose_detail' :
+     path.startsWith('/order/') ? 'order_detail' :
+     path.startsWith('/report/') ? 'report' : undefined)
+  if (pageName) trackPageView(pageName)
 })
 
 export default router

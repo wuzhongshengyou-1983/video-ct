@@ -82,7 +82,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Toast, Dialog } from 'vant'
-import { diagnosisApi, benchmarkApi } from '@/api'
+import { diagnosisApi, benchmarkApi, eventsApi } from '@/api'
 import { trackPageView, trackConversion } from '@/utils/tracker'
 import { useUserStore } from '@/stores/user'
 import { DIAGNOSIS_TYPES } from '@video-ct/shared'
@@ -167,6 +167,7 @@ async function submit() {
   loading.value = true
   try {
     trackConversion('diagnose_submitted', { track: form.track, diagnosis_type: form.diagnosis_type })
+    eventsApi.track('diagnosis_started', { track: form.track, diagnosis_type: form.diagnosis_type })
     const diag = await diagnosisApi.submit({
       video_url: form.video_url.trim(),
       track: form.track === '通用' ? undefined : form.track,
