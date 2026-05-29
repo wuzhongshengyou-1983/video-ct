@@ -1,6 +1,11 @@
 <template>
   <div class="page">
-    <van-nav-bar title="分享榜单" left-arrow @click-left="router.back()" :border="false" />
+    <van-nav-bar
+      title="分享榜单"
+      left-arrow
+      @click-left="router.back()"
+      :border="false"
+    />
 
     <!-- 骨架屏首次加载 -->
     <SkeletonList v-if="firstLoad" :count="5" :lines="2" />
@@ -44,14 +49,24 @@
                 <template v-else-if="getRealIndex(index) === 2">🥉</template>
                 <template v-else>#{{ getRealIndex(index) + 1 }}</template>
               </div>
-              <div class="avatar-placeholder">{{ avatarText(item.nickname) }}</div>
+              <div class="avatar-placeholder">
+                {{ avatarText(item.nickname) }}
+              </div>
               <div class="user-info">
-                <div class="nickname">{{ item.nickname || '匿名用户' }}</div>
-                <div class="user-level">{{ REFERRER_LEVEL_LABELS[item.level] || item.level || 'Lv.1' }}</div>
+                <div class="nickname">{{ item.nickname || "匿名用户" }}</div>
+                <div class="user-level">
+                  {{ levelLabels[item.level] || item.level || "Lv.1" }}
+                </div>
               </div>
               <div class="user-stats">
-                <div class="stat-referrals">{{ item.monthly_referrals || 0 }}人</div>
-                <div class="stat-reward">{{ item.monthly_reward_cny || item.monthly_rewards_cny || 0 }}元</div>
+                <div class="stat-referrals">
+                  {{ item.monthly_referrals || 0 }}人
+                </div>
+                <div class="stat-reward">
+                  {{
+                    item.monthly_reward_cny || item.monthly_rewards_cny || 0
+                  }}元
+                </div>
               </div>
             </div>
           </div>
@@ -71,129 +86,209 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { referrerApi } from '@/api'
-import { REFERRER_LEVEL_LABELS } from '@video-ct/shared'
-import SkeletonList from '@/components/SkeletonList.vue'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { referrerApi } from "@/api";
+import { REFERRER_LEVEL_LABELS } from "@video-ct/shared";
+const levelLabels = REFERRER_LEVEL_LABELS as Record<string, string>;
+import SkeletonList from "@/components/SkeletonList.vue";
 
-const router = useRouter()
+const router = useRouter();
 
-const allItems = ref<any[]>([])
-const list = ref<any[]>([])
-const firstLoad = ref(true)
-const networkError = ref(false)
-const errorMsg = ref('')
-const refreshing = ref(false)
-const loading = ref(false)
-const finished = ref(false)
-const page = ref(1)
-const PAGE_SIZE = 10
+const allItems = ref<any[]>([]);
+const list = ref<any[]>([]);
+const firstLoad = ref(true);
+const networkError = ref(false);
+const errorMsg = ref("");
+const refreshing = ref(false);
+const loading = ref(false);
+const finished = ref(false);
+const page = ref(1);
+const PAGE_SIZE = 10;
 
 function getRealIndex(index: number) {
-  return (page.value - 2) * PAGE_SIZE + index
+  return (page.value - 2) * PAGE_SIZE + index;
 }
 
 function topCls(index: number) {
-  if (index === 0) return 'top-1'
-  if (index === 1) return 'top-2'
-  if (index === 2) return 'top-3'
-  return ''
+  if (index === 0) return "top-1";
+  if (index === 1) return "top-2";
+  if (index === 2) return "top-3";
+  return "";
 }
 
 function rankCls(index: number) {
-  if (index < 3) return 'medal'
-  return 'normal'
+  if (index < 3) return "medal";
+  return "normal";
 }
 
 function avatarText(name: string) {
-  return (name || '?').charAt(0).toUpperCase()
+  return (name || "?").charAt(0).toUpperCase();
 }
 
 async function fetchAllItems() {
-  networkError.value = false
-  errorMsg.value = ''
+  networkError.value = false;
+  errorMsg.value = "";
   try {
-    allItems.value = await referrerApi.leaderboard()
+    allItems.value = await referrerApi.leaderboard();
   } catch (e: any) {
     if (!navigator.onLine) {
-      networkError.value = true
+      networkError.value = true;
     } else if (e.status && e.status >= 500) {
-      errorMsg.value = '服务繁忙，请稍后重试'
+      errorMsg.value = "服务繁忙，请稍后重试";
     } else {
-      errorMsg.value = e.message || '加载失败'
+      errorMsg.value = e.message || "加载失败";
     }
   }
 }
 
 function onLoad() {
-  const start = (page.value - 1) * PAGE_SIZE
-  const chunk = allItems.value.slice(start, start + PAGE_SIZE)
+  const start = (page.value - 1) * PAGE_SIZE;
+  const chunk = allItems.value.slice(start, start + PAGE_SIZE);
   if (chunk.length > 0) {
-    list.value.push(...chunk)
-    page.value++
+    list.value.push(...chunk);
+    page.value++;
   }
-  loading.value = false
+  loading.value = false;
   if (list.value.length >= allItems.value.length) {
-    finished.value = true
+    finished.value = true;
   }
 }
 
 async function onRefresh() {
-  await fetchAllItems()
-  list.value = []
-  page.value = 1
-  finished.value = false
-  onLoad()
-  refreshing.value = false
+  await fetchAllItems();
+  list.value = [];
+  page.value = 1;
+  finished.value = false;
+  onLoad();
+  refreshing.value = false;
 }
 
 onMounted(async () => {
-  await fetchAllItems()
-  firstLoad.value = false
-  onLoad()
-})
+  await fetchAllItems();
+  firstLoad.value = false;
+  onLoad();
+});
 </script>
 
 <style lang="scss" scoped>
-.page { padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); min-height: 100vh; }
-
-.board-header {
-  text-align: center; padding: 20px 0 16px;
-  .board-title { font-size: 18px; font-weight: 700; }
-  .board-sub { font-size: 12px; color: var(--vct-text-3); margin-top: 4px; }
+.page {
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  min-height: 100vh;
 }
 
-.board-list { display: flex; flex-direction: column; gap: 8px; }
+.board-header {
+  text-align: center;
+  padding: 20px 0 16px;
+  .board-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .board-sub {
+    font-size: 12px;
+    color: var(--vct-text-3);
+    margin-top: 4px;
+  }
+}
+
+.board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .board-item {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  &.top-1 { border-color: rgba(245,158,11,0.5); background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.03)); }
-  &.top-2 { border-color: rgba(192,192,192,0.4); background: linear-gradient(135deg, rgba(192,192,192,0.08), rgba(192,192,192,0.02)); }
-  &.top-3 { border-color: rgba(205,127,50,0.35); background: linear-gradient(135deg, rgba(205,127,50,0.08), rgba(205,127,50,0.02)); }
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  &.top-1 {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: linear-gradient(
+      135deg,
+      rgba(245, 158, 11, 0.12),
+      rgba(245, 158, 11, 0.03)
+    );
+  }
+  &.top-2 {
+    border-color: rgba(192, 192, 192, 0.4);
+    background: linear-gradient(
+      135deg,
+      rgba(192, 192, 192, 0.08),
+      rgba(192, 192, 192, 0.02)
+    );
+  }
+  &.top-3 {
+    border-color: rgba(205, 127, 50, 0.35);
+    background: linear-gradient(
+      135deg,
+      rgba(205, 127, 50, 0.08),
+      rgba(205, 127, 50, 0.02)
+    );
+  }
 }
 
 .rank-num {
-  width: 32px; text-align: center; font-size: 18px;
-  &.medal { font-size: 24px; }
-  &.normal { font-size: 14px; font-weight: 700; color: var(--vct-text-3); }
+  width: 32px;
+  text-align: center;
+  font-size: 18px;
+  &.medal {
+    font-size: 24px;
+  }
+  &.normal {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--vct-text-3);
+  }
 }
 
 .avatar-placeholder {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--vct-primary), var(--vct-accent));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
 }
 
-.user-info { flex: 1; }
-.nickname { font-size: 14px; font-weight: 500; }
-.user-level { font-size: 11px; color: var(--vct-text-3); margin-top: 2px; }
+.user-info {
+  flex: 1;
+}
+.nickname {
+  font-size: 14px;
+  font-weight: 500;
+}
+.user-level {
+  font-size: 11px;
+  color: var(--vct-text-3);
+  margin-top: 2px;
+}
 
-.user-stats { text-align: right; }
-.stat-referrals { font-size: 14px; font-weight: 600; color: var(--vct-primary); }
-.stat-reward { font-size: 11px; color: var(--vct-text-3); }
+.user-stats {
+  text-align: right;
+}
+.stat-referrals {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vct-primary);
+}
+.stat-reward {
+  font-size: 11px;
+  color: var(--vct-text-3);
+}
 
-.error-box { margin-top: 24px; text-align: center; padding: 24px;
-  p { color: var(--vct-danger); font-size: 13px; margin-bottom: 12px; }
+.error-box {
+  margin-top: 24px;
+  text-align: center;
+  padding: 24px;
+  p {
+    color: var(--vct-danger);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
 }
 </style>
