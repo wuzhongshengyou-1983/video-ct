@@ -198,8 +198,10 @@ async function login() {
     Toast.success(r.is_new_user ? "注册成功" : "登录成功");
     localStorage.removeItem("vct_ref");
     const redirect = (route.query.redirect as string) || "/home";
-    router.replace(redirect);
+    // 用硬跳转代替 router.replace，避免 finally 重渲组件打断 SPA 导航
+    window.location.replace(redirect);
   } catch (e: any) {
+    loading.value = false;
     if (e.status === 429) {
       Toast.fail("验证码验证太频繁，请稍后重试");
     } else if (e.status && e.status >= 500) {
@@ -207,8 +209,6 @@ async function login() {
     } else {
       Toast.fail(e.message || "登录失败");
     }
-  } finally {
-    loading.value = false;
   }
 }
 </script>
